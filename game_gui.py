@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
     QFrame, QMessageBox
 )
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont
 
 
@@ -57,6 +57,8 @@ current_solution = []
 current_puzzle = []
 cells = []
 level_completed = False
+game_seconds = 0
+timer = QTimer()
 
 difficulty_names = {
     "easy": "Лёгкая",
@@ -65,6 +67,26 @@ difficulty_names = {
 }
 
 # -------------------- Общие функции --------------------
+# --- таймер
+def update_timer_label():
+    minutes = game_seconds // 60
+    seconds = game_seconds % 60
+    game_timer_label.setText(f"Время: {minutes:02}:{seconds:02}")
+
+
+def tick_timer():
+    global game_seconds
+    game_seconds += 1
+    update_timer_label()
+
+
+def reset_timer():
+    global game_seconds
+    game_seconds = 0
+    update_timer_label()
+
+timer.timeout.connect(tick_timer)
+# ---  
 def update_coins_labels():
     coins_label.setText(f"Очки: {coins}")
     game_coins_label.setText(f"Очки: {coins}")
@@ -312,6 +334,10 @@ def start_game():
     games_played += 1
     save_progress_data()
 
+    timer.stop()
+    reset_timer()
+    timer.start(1000)
+
     if selected_size == 3:
         boards = load_boards("levels/3x3.json")
     elif selected_size == 4:
@@ -374,6 +400,7 @@ def check_game():
 
     if check_magic_square(current_board):
         level_completed = True
+        timer.stop()
         games_won += 1
         coins += 10
         save_progress_data()
@@ -519,12 +546,17 @@ game_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
 game_coins_label = QLabel("Очки: 0")
 game_coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
+game_timer_label = QLabel("Время: 00:00")
+game_timer_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
 game_back_top = QPushButton("<-- Назад")
 game_back_top.setFixedSize(100, 36)
 
 game_top_layout = QHBoxLayout()
 game_top_layout.addWidget(game_back_top, alignment=Qt.AlignmentFlag.AlignLeft)
 game_top_layout.addStretch(1)
+game_top_layout.addWidget(game_timer_label, alignment=Qt.AlignmentFlag.AlignRight)
+game_top_layout.addSpacing(16)
 game_top_layout.addWidget(game_coins_label, alignment=Qt.AlignmentFlag.AlignRight)
 
 grid_card = QFrame()
@@ -694,8 +726,8 @@ rules_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 stats_button.clicked.connect(lambda: (update_stats_labels(), stack.setCurrentIndex(4)))
 stats_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 
-game_back_top.clicked.connect(lambda: stack.setCurrentIndex(1))
-game_back.clicked.connect(lambda: stack.setCurrentIndex(0))
+game_back_top.clicked.connect(lambda: (timer.stop(), stack.setCurrentIndex(1)))
+game_back.clicked.connect(lambda: (timer.stop(), stack.setCurrentIndex(0)))
 
 start_button.clicked.connect(start_game)
 check_button.clicked.connect(check_game)
@@ -715,6 +747,7 @@ select_difficulty("easy")
 update_coins_labels()
 update_size_buttons()
 update_stats_labels()
+reset_timer()
 
 window.show()
 sys.exit(app.exec())
