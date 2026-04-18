@@ -83,20 +83,27 @@ def load_progress(filename):
     try:
         with open(filename, "r", encoding="utf-8") as file:
             data = json.load(file)
-
+        
             if "coins" not in data:
                 data["coins"] = 0
             if "unlocked_4x4" not in data:
                 data["unlocked_4x4"] = False
             if "unlocked_5x5" not in data:
                 data["unlocked_5x5"] = False
+            if "games_played" not in data:
+                data["games_played"] = 0
+            if "games_won" not in data:
+                data["games_won"] = 0
 
             return data
+            
     except FileNotFoundError:
         return {
             "coins": 0,
             "unlocked_4x4": False,
-            "unlocked_5x5": False
+            "unlocked_5x5": False,
+            "games_played": 0,
+            "games_won": 0
         }
 
 

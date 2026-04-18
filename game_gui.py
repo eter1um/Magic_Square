@@ -4,16 +4,19 @@ from game_logic import (
     load_boards, check_magic_square, numbers_in_range,
     has_duplicates, load_progress, save_progress
 )
+
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
     style_sheet, unlock_prices
 )
+
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QVBoxLayout,
     QStackedLayout, QGridLayout, QLineEdit, QHBoxLayout,
     QFrame, QMessageBox
 )
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
@@ -43,6 +46,8 @@ progress_data = load_progress(save_file)
 coins = progress_data["coins"]
 unlocked_4x4 = progress_data["unlocked_4x4"]
 unlocked_5x5 = progress_data["unlocked_5x5"]
+games_played = progress_data["games_played"]
+games_won = progress_data["games_won"]
 
 selected_size = 3
 selected_difficulty = "easy"
@@ -64,6 +69,10 @@ def update_coins_labels():
     coins_label.setText(f"Очки: {coins}")
     game_coins_label.setText(f"Очки: {coins}")
 
+def update_stats_labels():
+    stats_played_value.setText(str(games_played))
+    stats_won_value.setText(str(games_won))
+    stats_coins_value.setText(str(coins))
 
 def update_size_buttons():
     if unlocked_4x4:
@@ -81,8 +90,9 @@ def save_progress_data():
     progress_data["coins"] = coins
     progress_data["unlocked_4x4"] = unlocked_4x4
     progress_data["unlocked_5x5"] = unlocked_5x5
+    progress_data["games_played"] = games_played
+    progress_data["games_won"] = games_won
     save_progress(save_file, progress_data)
-
 
 def clear_layout(layout):
     while layout.count():
@@ -176,32 +186,20 @@ def try_buy_size(size):
 
     QMessageBox.information(window, "Покупка", "Покупка успешна")
 
-
 def hide_cells_by_difficulty(board, difficulty):
     puzzle = [row[:] for row in board]
     size = len(board)
 
-    if size == 3:
-        if difficulty == "easy":
-            hide_count = 2
-        elif difficulty == "medium":
-            hide_count = 4
-        else:
-            hide_count = 6
-    elif size == 4:
-        if difficulty == "easy":
-            hide_count = 4
-        elif difficulty == "medium":
-            hide_count = 6
-        else:
-            hide_count = 8
+    total_cells = size * size
+
+    if difficulty == "easy":
+        hide_percent = 0.2
+    elif difficulty == "medium":
+        hide_percent = 0.35
     else:
-        if difficulty == "easy":
-            hide_count = 6
-        elif difficulty == "medium":
-            hide_count = 8
-        else:
-            hide_count = 10
+        hide_percent = 0.5
+
+    hide_count = max(1, round(total_cells * hide_percent))
 
     positions = []
     for i in range(size):
@@ -215,7 +213,6 @@ def hide_cells_by_difficulty(board, difficulty):
         puzzle[row][col] = 0
 
     return puzzle
-
 
 def get_board_from_inputs(size):
     result = []
@@ -308,23 +305,19 @@ def show_win_dialog():
     elif msg.clickedButton() == menu_button:
         stack.setCurrentIndex(0)
 
-
 def start_game():
-    global current_solution, current_puzzle, level_completed
+    global current_solution, current_puzzle, level_completed, games_played
 
     level_completed = False
+    games_played += 1
+    save_progress_data()
 
     if selected_size == 3:
         boards = load_boards("levels/3x3.json")
     elif selected_size == 4:
         boards = load_boards("levels/4x4.json")
     elif selected_size == 5:
-        QMessageBox.information(
-            window,
-            "Скоро будет",
-            "Размер 5x5 уже открыт, но уровни для него пока не добавлены."
-        )
-        return
+        boards = load_boards("levels/5x5.json")
     else:
         return
 
@@ -337,7 +330,6 @@ def start_game():
     game_status.setText("Заполните пустые клетки")
     update_coins_labels()
     stack.setCurrentIndex(2)
-
 
 def clear_board():
     if not current_board_template:
@@ -356,7 +348,7 @@ def clear_board():
 
 
 def check_game():
-    global coins, level_completed
+    global coins, level_completed, games_won
 
     if not current_board_template:
         return
@@ -382,6 +374,7 @@ def check_game():
 
     if check_magic_square(current_board):
         level_completed = True
+        games_won += 1
         coins += 10
         save_progress_data()
         update_coins_labels()
@@ -406,9 +399,10 @@ subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 play_button = QPushButton("Новая игра")
 rules_button = QPushButton("Правила")
+stats_button = QPushButton("Статистика")
 exit_button = QPushButton("Выход")
 
-for button in [play_button, rules_button, exit_button]:
+for button in [play_button, rules_button, stats_button, exit_button]:
     button.setFixedSize(240, 52)
 
 menu_layout.addStretch(1)
@@ -419,6 +413,8 @@ menu_layout.addSpacing(70)
 menu_layout.addWidget(play_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addSpacing(14)
 menu_layout.addWidget(rules_button, alignment=Qt.AlignmentFlag.AlignCenter)
+menu_layout.addSpacing(14)
+menu_layout.addWidget(stats_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addSpacing(14)
 menu_layout.addWidget(exit_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addStretch(2)
@@ -618,12 +614,69 @@ rules_layout.addSpacing(24)
 rules_layout.addWidget(rules_back, alignment=Qt.AlignmentFlag.AlignCenter)
 rules_layout.addStretch(2)
 
+# -------------------- Страница статистики --------------------
+stats_page = QWidget()
+stats_layout = QVBoxLayout()
+stats_page.setLayout(stats_layout)
+
+title_stats = QLabel("Статистика")
+title_stats.setFont(title_font)
+title_stats.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+stats_subtitle = QLabel("Общий прогресс игрока")
+stats_subtitle.setFont(subtitle_font)
+stats_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+stats_card = QFrame()
+stats_card.setObjectName("card")
+stats_card.setFixedWidth(380)
+
+stats_card_layout = QVBoxLayout()
+stats_card.setLayout(stats_card_layout)
+
+stats_played_label = QLabel("Сыгранные игры:")
+stats_played_value = QLabel("0")
+
+stats_won_label = QLabel("Успешные игры:")
+stats_won_value = QLabel("0")
+
+stats_coins_label = QLabel("Общее число очков:")
+stats_coins_value = QLabel("0")
+
+for label in [stats_played_label, stats_won_label, stats_coins_label]:
+    label.setFont(section_font)
+
+stats_card_layout.addWidget(stats_played_label)
+stats_card_layout.addWidget(stats_played_value)
+stats_card_layout.addSpacing(12)
+
+stats_card_layout.addWidget(stats_won_label)
+stats_card_layout.addWidget(stats_won_value)
+stats_card_layout.addSpacing(12)
+
+stats_card_layout.addWidget(stats_coins_label)
+stats_card_layout.addWidget(stats_coins_value)
+
+stats_back = QPushButton("Назад")
+stats_back.setFixedSize(200, 50)
+
+stats_layout.addStretch(1)
+stats_layout.addWidget(title_stats, alignment=Qt.AlignmentFlag.AlignCenter)
+stats_layout.addSpacing(8)
+stats_layout.addWidget(stats_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
+stats_layout.addSpacing(24)
+stats_layout.addWidget(stats_card, alignment=Qt.AlignmentFlag.AlignCenter)
+stats_layout.addSpacing(24)
+stats_layout.addWidget(stats_back, alignment=Qt.AlignmentFlag.AlignCenter)
+stats_layout.addStretch(2)
+
 # -------------------- Stack --------------------
 stack = QStackedLayout()
-stack.addWidget(menu_page)
-stack.addWidget(level_page)
-stack.addWidget(game_page)
+stack.addWidget(menu_page)  
+stack.addWidget(level_page) 
+stack.addWidget(game_page) 
 stack.addWidget(rules_page)
+stack.addWidget(stats_page)
 
 window.setLayout(stack)
 
@@ -637,6 +690,9 @@ rules_button.clicked.connect(lambda: stack.setCurrentIndex(3))
 
 level_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 rules_back.clicked.connect(lambda: stack.setCurrentIndex(0))
+
+stats_button.clicked.connect(lambda: (update_stats_labels(), stack.setCurrentIndex(4)))
+stats_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 
 game_back_top.clicked.connect(lambda: stack.setCurrentIndex(1))
 game_back.clicked.connect(lambda: stack.setCurrentIndex(0))
@@ -658,6 +714,7 @@ select_size(3)
 select_difficulty("easy")
 update_coins_labels()
 update_size_buttons()
+update_stats_labels()
 
 window.show()
 sys.exit(app.exec())
