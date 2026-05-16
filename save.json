@@ -1,7 +1,7 @@
 {
-    "coins": 54901,
+    "coins": 0,
     "unlocked_4x4": false,
-    "unlocked_5x5": true,
-    "games_played": 71,
-    "games_won": 22
+    "unlocked_5x5": false,
+    "games_played": 8,
+    "games_won": 6
 }

@@ -8,7 +8,7 @@ from game_logic import (
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
-    style_sheet, unlock_prices, hint_prices
+    style_sheet, unlock_prices, hint_prices, reward_table
 )
 
 from PyQt6.QtWidgets import (
@@ -187,13 +187,21 @@ def update_stats_labels():
 def update_size_buttons():
     if unlocked_4x4:
         size4_button.setText("4x4")
+        size4_button.setProperty("locked", False)
     else:
-        size4_button.setText("4x4 🔒")
+        size4_button.setText("Купить 4x4")
+        size4_button.setProperty("locked", True)
 
     if unlocked_5x5:
         size5_button.setText("5x5")
+        size5_button.setProperty("locked", False)
     else:
-        size5_button.setText("5x5 🔒")
+        size5_button.setText("Купить 5x5")
+        size5_button.setProperty("locked", True)
+
+    for button in [size4_button, size5_button]:
+        button.style().unpolish(button)
+        button.style().polish(button)
 
 
 def save_progress_data():
@@ -570,10 +578,14 @@ def check_game():
         level_completed = True
         timer.stop()
         games_won += 1
-        coins += 10
+
+        reward = reward_table[selected_size][selected_difficulty]
+        coins += reward
+
         save_progress_data()
         update_coins_labels()
-        game_status.setText("Победа! +10 очков")
+        update_stats_labels()
+        game_status.setText(f"Победа! +{reward} очков")
         show_win_dialog()
     else:
         game_status.setText("Неверно. Попробуйте ещё раз")
@@ -652,10 +664,10 @@ start_button = QPushButton("Начать")
 start_button.setFixedSize(240, 52)
 
 for btn in [size3_button, size4_button, size5_button]:
-    btn.setFixedSize(110, 46)
+    btn.setFixedSize(125, 46)
 
 for btn in [easy_button, medium_button, hard_button]:
-    btn.setFixedSize(110, 46)
+    btn.setFixedSize(125, 46)
 
 top_layout = QHBoxLayout()
 top_layout.addWidget(level_back, alignment=Qt.AlignmentFlag.AlignLeft)

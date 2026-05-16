@@ -6,8 +6,25 @@ subtitle_font_size = 12
 section_font_size = 14
 
 unlock_prices = {
-    4: 30,
-    5: 60
+    4: 50,
+    5: 100
+}
+reward_table = {
+    3: {
+        "easy": 10,
+        "medium": 15,
+        "hard": 20
+    },
+    4: {
+        "easy": 25,
+        "medium": 35,
+        "hard": 50
+    },
+    5: {
+        "easy": 45,
+        "medium": 65,
+        "hard": 90
+    }
 }
 
 hint_prices = [10, 15, 20]
@@ -39,6 +56,15 @@ QPushButton {
 
 QPushButton:hover {
     background-color: #cfb28c;
+}
+
+QPushButton[locked="true"] {
+    background-color: #a89a87;
+    color: #3f3a34;
+}
+
+QPushButton[locked="true"]:hover {
+    background-color: #968773;
 }
 
 QPushButton:disabled {
