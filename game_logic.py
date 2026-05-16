@@ -94,6 +94,8 @@ def load_progress(filename):
                 data["games_played"] = 0
             if "games_won" not in data:
                 data["games_won"] = 0
+            if "theme" not in data:
+                data["theme"] = "light"
 
             return data
             
@@ -103,7 +105,8 @@ def load_progress(filename):
             "unlocked_4x4": False,
             "unlocked_5x5": False,
             "games_played": 0,
-            "games_won": 0
+            "games_won": 0,
+            "theme": "light"
         }
 
 

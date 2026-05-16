@@ -51,7 +51,7 @@ games_won = progress_data["games_won"]
 
 selected_size = 3
 selected_difficulty = "easy"
-current_theme = "light"
+current_theme = progress_data["theme"]
 
 current_board_template = []
 current_solution = []
@@ -216,6 +216,7 @@ def save_progress_data():
     progress_data["unlocked_5x5"] = unlocked_5x5
     progress_data["games_played"] = games_played
     progress_data["games_won"] = games_won
+    progress_data["theme"] = current_theme
     save_progress(save_file, progress_data)
 
 
@@ -252,6 +253,8 @@ def apply_theme(theme):
     elif theme == "dark":
         window.setStyleSheet(dark_style_sheet)
         set_selected_button(dark_theme_button, [light_theme_button, dark_theme_button])
+
+    save_progress_data()
 
 def select_size(size):
     global selected_size
@@ -1013,7 +1016,7 @@ update_size_buttons()
 update_stats_labels()
 update_hint_button()
 reset_timer()
-apply_theme("light")
+apply_theme(current_theme)
 
 window.show()
 sys.exit(app.exec())
