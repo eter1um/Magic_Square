@@ -8,7 +8,7 @@ from game_logic import (
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
-    style_sheet, unlock_prices, hint_prices, reward_table
+    style_sheet, dark_style_sheet, unlock_prices, hint_prices, reward_table
 )
 
 from PyQt6.QtWidgets import (
@@ -51,6 +51,7 @@ games_won = progress_data["games_won"]
 
 selected_size = 3
 selected_difficulty = "easy"
+current_theme = "light"
 
 current_board_template = []
 current_solution = []
@@ -90,12 +91,17 @@ timer.timeout.connect(tick_timer)
 
 
 # -------------------- Диалоговые окна --------------------
+def get_current_style():
+    if current_theme == "dark":
+        return dark_style_sheet
+    return style_sheet
+
 def show_info_dialog(title, text):
     dialog = QDialog(window)
     dialog.setWindowTitle(title)
     dialog.setModal(True)
     dialog.setFixedWidth(360)
-    dialog.setStyleSheet(style_sheet)
+    dialog.setStyleSheet(get_current_style())
 
     layout = QVBoxLayout()
     dialog.setLayout(layout)
@@ -129,7 +135,7 @@ def show_choice_dialog(title, text, left_text, right_text):
     dialog.setWindowTitle(title)
     dialog.setModal(True)
     dialog.setFixedWidth(350)
-    dialog.setStyleSheet(style_sheet)
+    dialog.setStyleSheet(get_current_style())
 
     layout = QVBoxLayout()
     dialog.setLayout(layout)
@@ -235,6 +241,17 @@ def set_selected_button(active_button, buttons):
     active_button.style().unpolish(active_button)
     active_button.style().polish(active_button)
 
+def apply_theme(theme):
+    global current_theme
+
+    current_theme = theme
+
+    if theme == "light":
+        window.setStyleSheet(style_sheet)
+        set_selected_button(light_theme_button, [light_theme_button, dark_theme_button])
+    elif theme == "dark":
+        window.setStyleSheet(dark_style_sheet)
+        set_selected_button(dark_theme_button, [light_theme_button, dark_theme_button])
 
 def select_size(size):
     global selected_size
@@ -590,7 +607,6 @@ def check_game():
     else:
         game_status.setText("Неверно. Попробуйте ещё раз")
 
-
 # -------------------- Страница меню --------------------
 menu_page = QWidget()
 menu_layout = QVBoxLayout()
@@ -607,9 +623,10 @@ subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 play_button = QPushButton("Новая игра")
 rules_button = QPushButton("Правила")
 stats_button = QPushButton("Статистика")
+settings_button = QPushButton("Настройки")
 exit_button = QPushButton("Выход")
 
-for button in [play_button, rules_button, stats_button, exit_button]:
+for button in [play_button, rules_button, stats_button, settings_button, exit_button]:
     button.setFixedSize(240, 52)
 
 menu_layout.addStretch(1)
@@ -622,6 +639,8 @@ menu_layout.addSpacing(14)
 menu_layout.addWidget(rules_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addSpacing(14)
 menu_layout.addWidget(stats_button, alignment=Qt.AlignmentFlag.AlignCenter)
+menu_layout.addSpacing(14)
+menu_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addSpacing(14)
 menu_layout.addWidget(exit_button, alignment=Qt.AlignmentFlag.AlignCenter)
 menu_layout.addStretch(2)
@@ -888,6 +907,58 @@ stats_layout.addSpacing(24)
 stats_layout.addWidget(stats_back, alignment=Qt.AlignmentFlag.AlignCenter)
 stats_layout.addStretch(2)
 
+# -------------------- Страница настроек --------------------
+settings_page = QWidget()
+settings_page_layout = QVBoxLayout()
+settings_page.setLayout(settings_page_layout)
+
+title_settings = QLabel("Настройки")
+title_settings.setFont(title_font)
+title_settings.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+settings_subtitle = QLabel("Параметры интерфейса")
+settings_subtitle.setFont(subtitle_font)
+settings_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+settings_card_page = QFrame()
+settings_card_page.setObjectName("card")
+settings_card_page.setFixedWidth(380)
+
+settings_card_page_layout = QVBoxLayout()
+settings_card_page.setLayout(settings_card_page_layout)
+
+theme_label = QLabel("Тема интерфейса")
+theme_label.setFont(section_font)
+theme_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+light_theme_button = QPushButton("Светлая")
+dark_theme_button = QPushButton("Тёмная")
+
+light_theme_button.setFixedSize(140, 46)
+dark_theme_button.setFixedSize(140, 46)
+
+theme_buttons_layout = QHBoxLayout()
+theme_buttons_layout.setSpacing(12)
+theme_buttons_layout.addWidget(light_theme_button)
+theme_buttons_layout.addWidget(dark_theme_button)
+
+settings_card_page_layout.addWidget(theme_label)
+settings_card_page_layout.addSpacing(12)
+settings_card_page_layout.addLayout(theme_buttons_layout)
+
+settings_back = QPushButton("Назад")
+settings_back.setFixedSize(200, 50)
+
+settings_page_layout.addStretch(1)
+settings_page_layout.addWidget(title_settings, alignment=Qt.AlignmentFlag.AlignCenter)
+settings_page_layout.addSpacing(8)
+settings_page_layout.addWidget(settings_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
+settings_page_layout.addSpacing(24)
+settings_page_layout.addWidget(settings_card_page, alignment=Qt.AlignmentFlag.AlignCenter)
+settings_page_layout.addSpacing(24)
+settings_page_layout.addWidget(settings_back, alignment=Qt.AlignmentFlag.AlignCenter)
+settings_page_layout.addStretch(2)
+
 # -------------------- Stack --------------------
 stack = QStackedLayout()
 stack.addWidget(menu_page)
@@ -895,6 +966,7 @@ stack.addWidget(level_page)
 stack.addWidget(game_page)
 stack.addWidget(rules_page)
 stack.addWidget(stats_page)
+stack.addWidget(settings_page)
 
 window.setLayout(stack)
 
@@ -927,6 +999,12 @@ easy_button.clicked.connect(lambda: select_difficulty("easy"))
 medium_button.clicked.connect(lambda: select_difficulty("medium"))
 hard_button.clicked.connect(lambda: select_difficulty("hard"))
 
+settings_button.clicked.connect(lambda: stack.setCurrentIndex(5))
+settings_back.clicked.connect(lambda: stack.setCurrentIndex(0))
+
+light_theme_button.clicked.connect(lambda: apply_theme("light"))
+dark_theme_button.clicked.connect(lambda: apply_theme("dark"))
+
 # -------------------- Начальные состояния --------------------
 select_size(3)
 select_difficulty("easy")
@@ -935,6 +1013,7 @@ update_size_buttons()
 update_stats_labels()
 update_hint_button()
 reset_timer()
+apply_theme("light")
 
 window.show()
 sys.exit(app.exec())

@@ -89,3 +89,70 @@ QLineEdit#gameCell[fixed="true"] {
     color: #5d4630;
 }
 """
+
+dark_style_sheet = """
+QWidget {
+    background-color: #252525;
+    color: #f0f0f0;
+}
+
+QLabel {
+    background: transparent;
+}
+
+QFrame#card {
+    background-color: #333333;
+    border: 1px solid #555555;
+    border-radius: 18px;
+    padding: 18px;
+}
+
+QPushButton {
+    background-color: #555555;
+    color: #f0f0f0;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #666666;
+}
+
+QPushButton:disabled {
+    background-color: #333333;
+    color: #777777;
+}
+
+QPushButton[selected="true"] {
+    background-color: #2f80ed;
+    color: white;
+}
+
+QPushButton[selected="true"]:hover {
+    background-color: #1f6fd1;
+}
+
+QPushButton[locked="true"] {
+    background-color: #3a3a3a;
+    color: #9a9a9a;
+}
+
+QPushButton[locked="true"]:hover {
+    background-color: #464646;
+}
+
+QLineEdit#gameCell {
+    background-color: #2f2f2f;
+    color: #f0f0f0;
+    border: 2px solid #777777;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+QLineEdit#gameCell[fixed="true"] {
+    background-color: #3b4658;
+    color: #dbeafe;
+}
+"""
