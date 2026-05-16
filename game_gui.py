@@ -8,7 +8,7 @@ from game_logic import (
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
-    style_sheet, unlock_prices, hint_price
+    style_sheet, unlock_prices, hint_prices
 )
 
 from PyQt6.QtWidgets import (
@@ -59,6 +59,7 @@ cells = []
 level_completed = False
 game_seconds = 0
 timer = QTimer()
+hints_used = 0
 
 difficulty_names = {
     "easy": "Лёгкая",
@@ -415,11 +416,13 @@ def show_win_dialog():
 
 
 def start_game():
-    global current_solution, current_puzzle, level_completed, games_played
+    global current_solution, current_puzzle, level_completed, games_played, hints_used
 
     level_completed = False
     games_played += 1
     save_progress_data()
+    hints_used = 0
+    update_hint_button()
 
     timer.stop()
     reset_timer()
@@ -460,9 +463,16 @@ def clear_board():
 
     game_status.setText("Поле очищено")
 
+def update_hint_button():
+    hint_button.setText("Подсказка")
+
+    if hints_used >= len(hint_prices):
+        hint_button.setEnabled(False)
+    else:
+        hint_button.setEnabled(True)
 
 def buy_hint():
-    global coins
+    global coins, hints_used
 
     if not current_board_template:
         return
@@ -471,9 +481,16 @@ def buy_hint():
         game_status.setText("Уровень уже пройден")
         return
 
+    if hints_used >= len(hint_prices):
+        game_status.setText("Подсказки на этом уровне закончились")
+        update_hint_button()
+        return
+
+    current_hint_price = hint_prices[hints_used]
+
     choice = show_choice_dialog(
         "Подсказка",
-        f"Купить подсказку за {hint_price} очков?",
+        f"Купить подсказку за {current_hint_price} очков?",
         "Отмена",
         "Купить"
     )
@@ -481,7 +498,7 @@ def buy_hint():
     if choice != "right":
         return
 
-    if coins < hint_price:
+    if coins < current_hint_price:
         show_info_dialog("Недостаточно средств", "Недостаточно средств")
         return
 
@@ -513,12 +530,15 @@ def buy_hint():
 
     current_board_template[row][col] = correct_value
 
-    coins -= hint_price
+    coins -= current_hint_price
+    hints_used += 1
+
     save_progress_data()
     update_coins_labels()
     update_stats_labels()
+    update_hint_button()
 
-    game_status.setText(f"Подсказка куплена: -{hint_price} очков")
+    game_status.setText(f"Подсказка куплена: -{current_hint_price} очков")
 
 
 def check_game():
@@ -901,6 +921,7 @@ select_difficulty("easy")
 update_coins_labels()
 update_size_buttons()
 update_stats_labels()
+update_hint_button()
 reset_timer()
 
 window.show()

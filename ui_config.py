@@ -10,7 +10,7 @@ unlock_prices = {
     5: 60
 }
 
-hint_price = 5
+hint_prices = [10, 15, 20]
 
 style_sheet = """
 QWidget {
@@ -39,6 +39,11 @@ QPushButton {
 
 QPushButton:hover {
     background-color: #cfb28c;
+}
+
+QPushButton:disabled {
+    background-color: #8f877d;
+    color: #4f4a44;
 }
 
 QPushButton[selected="true"] {
