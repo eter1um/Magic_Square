@@ -10,6 +10,8 @@ unlock_prices = {
     5: 60
 }
 
+hint_price = 5
+
 style_sheet = """
 QWidget {
     background-color: #f4f1ea;

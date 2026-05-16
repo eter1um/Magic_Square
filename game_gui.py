@@ -8,13 +8,13 @@ from game_logic import (
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
-    style_sheet, unlock_prices
+    style_sheet, unlock_prices, hint_price
 )
 
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QVBoxLayout,
     QStackedLayout, QGridLayout, QLineEdit, QHBoxLayout,
-    QFrame, QMessageBox
+    QFrame, QDialog
 )
 
 from PyQt6.QtCore import Qt, QTimer
@@ -66,8 +66,7 @@ difficulty_names = {
     "hard": "Сложная"
 }
 
-# -------------------- Общие функции --------------------
-# --- таймер
+# -------------------- Таймер --------------------
 def update_timer_label():
     minutes = game_seconds // 60
     seconds = game_seconds % 60
@@ -85,16 +84,104 @@ def reset_timer():
     game_seconds = 0
     update_timer_label()
 
+
 timer.timeout.connect(tick_timer)
-# ---  
+
+
+# -------------------- Диалоговые окна --------------------
+def show_info_dialog(title, text):
+    dialog = QDialog(window)
+    dialog.setWindowTitle(title)
+    dialog.setModal(True)
+    dialog.setFixedWidth(360)
+    dialog.setStyleSheet(style_sheet)
+
+    layout = QVBoxLayout()
+    dialog.setLayout(layout)
+
+    text_label = QLabel(text)
+    text_label.setWordWrap(True)
+    text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    ok_button = QPushButton("Ок")
+    ok_button.setFixedSize(120, 42)
+    ok_button.clicked.connect(dialog.accept)
+
+    button_row = QHBoxLayout()
+    button_row.addStretch(1)
+    button_row.addWidget(ok_button)
+    button_row.addStretch(1)
+
+    layout.addSpacing(10)
+    layout.addWidget(text_label)
+    layout.addSpacing(14)
+    layout.addLayout(button_row)
+    layout.addSpacing(6)
+
+    dialog.exec()
+
+
+def show_choice_dialog(title, text, left_text, right_text):
+    result = {"choice": None}
+
+    dialog = QDialog(window)
+    dialog.setWindowTitle(title)
+    dialog.setModal(True)
+    dialog.setFixedWidth(350)
+    dialog.setStyleSheet(style_sheet)
+
+    layout = QVBoxLayout()
+    dialog.setLayout(layout)
+
+    text_label = QLabel(text)
+    text_label.setWordWrap(True)
+    text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    left_button = QPushButton(left_text)
+    right_button = QPushButton(right_text)
+
+    left_button.setFixedSize(150, 42)
+    right_button.setFixedSize(150, 42)
+
+    def choose_left():
+        result["choice"] = "left"
+        dialog.accept()
+
+    def choose_right():
+        result["choice"] = "right"
+        dialog.accept()
+
+    left_button.clicked.connect(choose_left)
+    right_button.clicked.connect(choose_right)
+
+    button_row = QHBoxLayout()
+    button_row.addStretch(1)
+    button_row.addWidget(left_button)
+    button_row.addSpacing(10)
+    button_row.addWidget(right_button)
+    button_row.addStretch(1)
+
+    layout.addSpacing(10)
+    layout.addWidget(text_label)
+    layout.addSpacing(14)
+    layout.addLayout(button_row)
+    layout.addSpacing(6)
+
+    dialog.exec()
+    return result["choice"]
+
+
+# -------------------- Общие функции --------------------
 def update_coins_labels():
     coins_label.setText(f"Очки: {coins}")
     game_coins_label.setText(f"Очки: {coins}")
+
 
 def update_stats_labels():
     stats_played_value.setText(str(games_played))
     stats_won_value.setText(str(games_won))
     stats_coins_value.setText(str(coins))
+
 
 def update_size_buttons():
     if unlocked_4x4:
@@ -115,6 +202,7 @@ def save_progress_data():
     progress_data["games_played"] = games_played
     progress_data["games_won"] = games_won
     save_progress(save_file, progress_data)
+
 
 def clear_layout(layout):
     while layout.count():
@@ -179,20 +267,18 @@ def try_buy_size(size):
 
     price = unlock_prices[size]
 
-    msg = QMessageBox(window)
-    msg.setWindowTitle("Покупка")
-    msg.setText(f"Купить поле {size}x{size} за {price} очков?")
+    choice = show_choice_dialog(
+        "Покупка",
+        f"Купить поле {size}x{size} за {price} очков?",
+        "Отмена",
+        "Купить"
+    )
 
-    buy_button = msg.addButton("Купить", QMessageBox.ButtonRole.AcceptRole)
-    msg.addButton("Отмена", QMessageBox.ButtonRole.RejectRole)
-
-    msg.exec()
-
-    if msg.clickedButton() != buy_button:
+    if choice != "right":
         return
 
     if coins < price:
-        QMessageBox.information(window, "Недостаточно средств", "Недостаточно средств")
+        show_info_dialog("Недостаточно средств", "Недостаточно средств")
         return
 
     coins -= price
@@ -206,7 +292,8 @@ def try_buy_size(size):
     update_coins_labels()
     update_size_buttons()
 
-    QMessageBox.information(window, "Покупка", "Покупка успешна")
+    show_info_dialog("Покупка", "Покупка успешна")
+
 
 def hide_cells_by_difficulty(board, difficulty):
     puzzle = [row[:] for row in board]
@@ -235,6 +322,7 @@ def hide_cells_by_difficulty(board, difficulty):
         puzzle[row][col] = 0
 
     return puzzle
+
 
 def get_board_from_inputs(size):
     result = []
@@ -313,19 +401,18 @@ def build_game_board(board):
 
 
 def show_win_dialog():
-    msg = QMessageBox(window)
-    msg.setWindowTitle("Победа")
-    msg.setText("Вы успешно решили магический квадрат!")
+    choice = show_choice_dialog(
+        "Победа",
+        "Магический квадрат решён!",
+        "В главное меню",
+        "Повторить"
+    )
 
-    repeat_button = msg.addButton("Повторить", QMessageBox.ButtonRole.AcceptRole)
-    menu_button = msg.addButton("В главное меню", QMessageBox.ButtonRole.RejectRole)
-
-    msg.exec()
-
-    if msg.clickedButton() == repeat_button:
+    if choice == "right":
         start_game()
-    elif msg.clickedButton() == menu_button:
+    elif choice == "left":
         stack.setCurrentIndex(0)
+
 
 def start_game():
     global current_solution, current_puzzle, level_completed, games_played
@@ -357,6 +444,7 @@ def start_game():
     update_coins_labels()
     stack.setCurrentIndex(2)
 
+
 def clear_board():
     if not current_board_template:
         return
@@ -371,6 +459,66 @@ def clear_board():
             k += 1
 
     game_status.setText("Поле очищено")
+
+
+def buy_hint():
+    global coins
+
+    if not current_board_template:
+        return
+
+    if level_completed:
+        game_status.setText("Уровень уже пройден")
+        return
+
+    choice = show_choice_dialog(
+        "Подсказка",
+        f"Купить подсказку за {hint_price} очков?",
+        "Отмена",
+        "Купить"
+    )
+
+    if choice != "right":
+        return
+
+    if coins < hint_price:
+        show_info_dialog("Недостаточно средств", "Недостаточно средств")
+        return
+
+    empty_positions = []
+    size = len(current_board_template)
+
+    for i in range(size):
+        for j in range(size):
+            cell_index = i * size + j
+
+            if current_board_template[i][j] == 0 and cells[cell_index].text().strip() == "":
+                empty_positions.append((i, j))
+
+    if not empty_positions:
+        show_info_dialog("Подсказка", "Нет пустых клеток для подсказки")
+        return
+
+    row, col = random.choice(empty_positions)
+    correct_value = current_solution[row][col]
+
+    cell_index = row * size + col
+    cell = cells[cell_index]
+
+    cell.setText(str(correct_value))
+    cell.setReadOnly(True)
+    cell.setProperty("fixed", True)
+    cell.style().unpolish(cell)
+    cell.style().polish(cell)
+
+    current_board_template[row][col] = correct_value
+
+    coins -= hint_price
+    save_progress_data()
+    update_coins_labels()
+    update_stats_labels()
+
+    game_status.setText(f"Подсказка куплена: -{hint_price} очков")
 
 
 def check_game():
@@ -543,11 +691,11 @@ game_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 game_status = QLabel("Заполните пустые клетки")
 game_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-game_coins_label = QLabel("Очки: 0")
-game_coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
 game_timer_label = QLabel("Время: 00:00")
 game_timer_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+game_coins_label = QLabel("Очки: 0")
+game_coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
 game_back_top = QPushButton("<-- Назад")
 game_back_top.setFixedSize(100, 36)
@@ -555,9 +703,13 @@ game_back_top.setFixedSize(100, 36)
 game_top_layout = QHBoxLayout()
 game_top_layout.addWidget(game_back_top, alignment=Qt.AlignmentFlag.AlignLeft)
 game_top_layout.addStretch(1)
-game_top_layout.addWidget(game_timer_label, alignment=Qt.AlignmentFlag.AlignRight)
-game_top_layout.addSpacing(16)
-game_top_layout.addWidget(game_coins_label, alignment=Qt.AlignmentFlag.AlignRight)
+
+game_info_layout = QVBoxLayout()
+game_info_layout.setSpacing(4)
+game_info_layout.addWidget(game_timer_label, alignment=Qt.AlignmentFlag.AlignRight)
+game_info_layout.addWidget(game_coins_label, alignment=Qt.AlignmentFlag.AlignRight)
+
+game_top_layout.addLayout(game_info_layout)
 
 grid_card = QFrame()
 grid_card.setObjectName("card")
@@ -566,7 +718,7 @@ grid_card.setLayout(grid_card_layout)
 
 grid_widget = QWidget()
 grid = QGridLayout()
-grid.setSpacing(10)
+grid.setSpacing(8)
 grid.setContentsMargins(0, 0, 0, 0)
 grid_widget.setLayout(grid)
 
@@ -577,24 +729,26 @@ buttons_row.setSpacing(12)
 
 check_button = QPushButton("Проверить")
 clear_button = QPushButton("Очистить")
-game_back = QPushButton("В меню")
+hint_button = QPushButton("Подсказка")
 
-for button in [check_button, clear_button, game_back]:
-    button.setFixedSize(140, 48)
+for button in [check_button, clear_button, hint_button]:
+    button.setFixedSize(130, 48)
 
+buttons_row.addStretch(1)
 buttons_row.addWidget(check_button)
 buttons_row.addWidget(clear_button)
-buttons_row.addWidget(game_back)
+buttons_row.addWidget(hint_button)
+buttons_row.addStretch(1)
 
 game_layout.addSpacing(18)
 game_layout.addLayout(game_top_layout)
-game_layout.addSpacing(18)
-game_layout.addWidget(game_title)
+game_layout.addSpacing(20)
+game_layout.addWidget(game_title, alignment=Qt.AlignmentFlag.AlignCenter)
 game_layout.addSpacing(8)
-game_layout.addWidget(game_status)
-game_layout.addSpacing(24)
+game_layout.addWidget(game_status, alignment=Qt.AlignmentFlag.AlignCenter)
+game_layout.addSpacing(22)
 game_layout.addWidget(grid_card, alignment=Qt.AlignmentFlag.AlignCenter)
-game_layout.addSpacing(24)
+game_layout.addSpacing(22)
 game_layout.addLayout(buttons_row)
 game_layout.addStretch(1)
 
@@ -704,9 +858,9 @@ stats_layout.addStretch(2)
 
 # -------------------- Stack --------------------
 stack = QStackedLayout()
-stack.addWidget(menu_page)  
-stack.addWidget(level_page) 
-stack.addWidget(game_page) 
+stack.addWidget(menu_page)
+stack.addWidget(level_page)
+stack.addWidget(game_page)
 stack.addWidget(rules_page)
 stack.addWidget(stats_page)
 
@@ -727,11 +881,11 @@ stats_button.clicked.connect(lambda: (update_stats_labels(), stack.setCurrentInd
 stats_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 
 game_back_top.clicked.connect(lambda: (timer.stop(), stack.setCurrentIndex(1)))
-game_back.clicked.connect(lambda: (timer.stop(), stack.setCurrentIndex(0)))
 
 start_button.clicked.connect(start_game)
 check_button.clicked.connect(check_game)
 clear_button.clicked.connect(clear_board)
+hint_button.clicked.connect(buy_hint)
 
 size3_button.clicked.connect(lambda: select_size(3))
 size4_button.clicked.connect(lambda: select_size(4))
