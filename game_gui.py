@@ -14,7 +14,7 @@ from ui_config import (
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QVBoxLayout,
     QStackedLayout, QGridLayout, QLineEdit, QHBoxLayout,
-    QFrame, QDialog
+    QFrame, QDialog, QComboBox, QSlider
 )
 
 from PyQt6.QtCore import Qt, QTimer
@@ -52,6 +52,9 @@ games_won = progress_data["games_won"]
 selected_size = 3
 selected_difficulty = "easy"
 current_theme = progress_data["theme"]
+current_language = progress_data["language"]
+music_volume = progress_data["music_volume"]
+sound_volume = progress_data["sound_volume"]
 
 current_board_template = []
 current_solution = []
@@ -217,6 +220,9 @@ def save_progress_data():
     progress_data["games_played"] = games_played
     progress_data["games_won"] = games_won
     progress_data["theme"] = current_theme
+    progress_data["language"] = current_language
+    progress_data["music_volume"] = music_volume
+    progress_data["sound_volume"] = sound_volume
     save_progress(save_file, progress_data)
 
 
@@ -254,6 +260,37 @@ def apply_theme(theme):
         window.setStyleSheet(dark_style_sheet)
         set_selected_button(dark_theme_button, [light_theme_button, dark_theme_button])
 
+    save_progress_data()
+
+def change_language(language_index):
+    global current_language
+
+    if language_index == 0:
+        current_language = "ru"
+    else:
+        current_language = "en"
+
+    save_progress_data()
+
+
+def update_volume_labels():
+    music_volume_value.setText(f"{music_volume}%")
+    sound_volume_value.setText(f"{sound_volume}%")
+
+
+def change_music_volume(value):
+    global music_volume
+
+    music_volume = value
+    update_volume_labels()
+    save_progress_data()
+
+
+def change_sound_volume(value):
+    global sound_volume
+
+    sound_volume = value
+    update_volume_labels()
     save_progress_data()
 
 def select_size(size):
@@ -948,6 +985,58 @@ theme_buttons_layout.addWidget(dark_theme_button)
 settings_card_page_layout.addWidget(theme_label)
 settings_card_page_layout.addSpacing(12)
 settings_card_page_layout.addLayout(theme_buttons_layout)
+settings_card_page_layout.addSpacing(24)
+
+language_label = QLabel("Язык интерфейса")
+language_label.setFont(section_font)
+language_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+language_combo = QComboBox()
+language_combo.addItem("Русский")
+language_combo.addItem("English")
+language_combo.setFixedHeight(42)
+
+settings_card_page_layout.addWidget(language_label)
+settings_card_page_layout.addSpacing(10)
+settings_card_page_layout.addWidget(language_combo)
+
+settings_card_page_layout.addSpacing(24)
+
+music_volume_label = QLabel("Громкость музыки")
+music_volume_label.setFont(section_font)
+music_volume_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+music_volume_value = QLabel("50%")
+music_volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+music_volume_slider = QSlider(Qt.Orientation.Horizontal)
+music_volume_slider.setMinimum(0)
+music_volume_slider.setMaximum(100)
+music_volume_slider.setValue(music_volume)
+
+settings_card_page_layout.addWidget(music_volume_label)
+settings_card_page_layout.addSpacing(6)
+settings_card_page_layout.addWidget(music_volume_value)
+settings_card_page_layout.addWidget(music_volume_slider)
+
+settings_card_page_layout.addSpacing(18)
+
+sound_volume_label = QLabel("Громкость звуков")
+sound_volume_label.setFont(section_font)
+sound_volume_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+sound_volume_value = QLabel("50%")
+sound_volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+sound_volume_slider = QSlider(Qt.Orientation.Horizontal)
+sound_volume_slider.setMinimum(0)
+sound_volume_slider.setMaximum(100)
+sound_volume_slider.setValue(sound_volume)
+
+settings_card_page_layout.addWidget(sound_volume_label)
+settings_card_page_layout.addSpacing(6)
+settings_card_page_layout.addWidget(sound_volume_value)
+settings_card_page_layout.addWidget(sound_volume_slider)
 
 settings_back = QPushButton("Назад")
 settings_back.setFixedSize(200, 50)
@@ -1008,6 +1097,10 @@ settings_back.clicked.connect(lambda: stack.setCurrentIndex(0))
 light_theme_button.clicked.connect(lambda: apply_theme("light"))
 dark_theme_button.clicked.connect(lambda: apply_theme("dark"))
 
+language_combo.currentIndexChanged.connect(change_language)
+music_volume_slider.valueChanged.connect(change_music_volume)
+sound_volume_slider.valueChanged.connect(change_sound_volume)
+
 # -------------------- Начальные состояния --------------------
 select_size(3)
 select_difficulty("easy")
@@ -1016,6 +1109,16 @@ update_size_buttons()
 update_stats_labels()
 update_hint_button()
 reset_timer()
+
+if current_language == "ru":
+    language_combo.setCurrentIndex(0)
+else:
+    language_combo.setCurrentIndex(1)
+
+music_volume_slider.setValue(music_volume)
+sound_volume_slider.setValue(sound_volume)
+update_volume_labels()
+
 apply_theme(current_theme)
 
 window.show()

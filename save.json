@@ -4,5 +4,8 @@
     "unlocked_5x5": false,
     "games_played": 14,
     "games_won": 6,
-    "theme": "dark"
+    "theme": "dark",
+    "language": "en",
+    "music_volume": 44,
+    "sound_volume": 42
 }

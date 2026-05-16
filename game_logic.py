@@ -96,6 +96,12 @@ def load_progress(filename):
                 data["games_won"] = 0
             if "theme" not in data:
                 data["theme"] = "light"
+            if "language" not in data:
+                data["language"] = "ru"
+            if "music_volume" not in data:
+                data["music_volume"] = 50
+            if "sound_volume" not in data:
+                data["sound_volume"] = 50
 
             return data
             
@@ -106,7 +112,10 @@ def load_progress(filename):
             "unlocked_5x5": False,
             "games_played": 0,
             "games_won": 0,
-            "theme": "light"
+            "theme": "light",
+            "language": "ru",
+            "music_volume": 50,
+            "sound_volume": 50
         }
 
 
