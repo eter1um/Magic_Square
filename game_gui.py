@@ -1,5 +1,8 @@
 import sys
 import random
+
+from localization import get_text
+
 from game_logic import (
     load_boards, check_magic_square, numbers_in_range,
     has_duplicates, load_progress, save_progress
@@ -65,17 +68,20 @@ game_seconds = 0
 timer = QTimer()
 hints_used = 0
 
-difficulty_names = {
-    "easy": "Лёгкая",
-    "medium": "Средняя",
-    "hard": "Сложная"
-}
+
+def tr(key, **kwargs):
+    return get_text(current_language, key, **kwargs)
+
+
+def get_difficulty_name(difficulty):
+    return tr(difficulty)
+
 
 # -------------------- Таймер --------------------
 def update_timer_label():
     minutes = game_seconds // 60
     seconds = game_seconds % 60
-    game_timer_label.setText(f"Время: {minutes:02}:{seconds:02}")
+    game_timer_label.setText(tr("time", minutes=minutes, seconds=seconds))
 
 
 def tick_timer():
@@ -99,6 +105,7 @@ def get_current_style():
         return dark_style_sheet
     return style_sheet
 
+
 def show_info_dialog(title, text):
     dialog = QDialog(window)
     dialog.setWindowTitle(title)
@@ -113,7 +120,7 @@ def show_info_dialog(title, text):
     text_label.setWordWrap(True)
     text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    ok_button = QPushButton("Ок")
+    ok_button = QPushButton(tr("ok"))
     ok_button.setFixedSize(120, 42)
     ok_button.clicked.connect(dialog.accept)
 
@@ -183,8 +190,8 @@ def show_choice_dialog(title, text, left_text, right_text):
 
 # -------------------- Общие функции --------------------
 def update_coins_labels():
-    coins_label.setText(f"Очки: {coins}")
-    game_coins_label.setText(f"Очки: {coins}")
+    coins_label.setText(tr("coins", coins=coins))
+    game_coins_label.setText(tr("coins", coins=coins))
 
 
 def update_stats_labels():
@@ -198,14 +205,14 @@ def update_size_buttons():
         size4_button.setText("4x4")
         size4_button.setProperty("locked", False)
     else:
-        size4_button.setText("Купить 4x4")
+        size4_button.setText(tr("buy_4x4"))
         size4_button.setProperty("locked", True)
 
     if unlocked_5x5:
         size5_button.setText("5x5")
         size5_button.setProperty("locked", False)
     else:
-        size5_button.setText("Купить 5x5")
+        size5_button.setText(tr("buy_5x5"))
         size5_button.setProperty("locked", True)
 
     for button in [size4_button, size5_button]:
@@ -248,6 +255,7 @@ def set_selected_button(active_button, buttons):
     active_button.style().unpolish(active_button)
     active_button.style().polish(active_button)
 
+
 def apply_theme(theme):
     global current_theme
 
@@ -262,6 +270,7 @@ def apply_theme(theme):
 
     save_progress_data()
 
+
 def change_language(language_index):
     global current_language
 
@@ -270,6 +279,7 @@ def change_language(language_index):
     else:
         current_language = "en"
 
+    update_language_texts()
     save_progress_data()
 
 
@@ -292,6 +302,7 @@ def change_sound_volume(value):
     sound_volume = value
     update_volume_labels()
     save_progress_data()
+
 
 def select_size(size):
     global selected_size
@@ -334,17 +345,17 @@ def try_buy_size(size):
     price = unlock_prices[size]
 
     choice = show_choice_dialog(
-        "Покупка",
-        f"Купить поле {size}x{size} за {price} очков?",
-        "Отмена",
-        "Купить"
+        tr("purchase"),
+        tr("buy_field", size=size, price=price),
+        tr("cancel"),
+        tr("buy")
     )
 
     if choice != "right":
         return
 
     if coins < price:
-        show_info_dialog("Недостаточно средств", "Недостаточно средств")
+        show_info_dialog(tr("not_enough_money"), tr("not_enough_money"))
         return
 
     coins -= price
@@ -358,7 +369,7 @@ def try_buy_size(size):
     update_coins_labels()
     update_size_buttons()
 
-    show_info_dialog("Покупка", "Покупка успешна")
+    show_info_dialog(tr("purchase"), tr("purchase_success"))
 
 
 def hide_cells_by_difficulty(board, difficulty):
@@ -468,10 +479,10 @@ def build_game_board(board):
 
 def show_win_dialog():
     choice = show_choice_dialog(
-        "Победа",
-        "Магический квадрат решён!",
-        "В главное меню",
-        "Повторить"
+        tr("win"),
+        tr("win_text"),
+        tr("main_menu"),
+        tr("repeat")
     )
 
     if choice == "right":
@@ -507,8 +518,10 @@ def start_game():
 
     build_game_board(current_puzzle)
 
-    game_title.setText(f"Игра {selected_size}x{selected_size} | {difficulty_names[selected_difficulty]}")
-    game_status.setText("Заполните пустые клетки")
+    game_title.setText(
+        tr("game_title", size=selected_size, difficulty=get_difficulty_name(selected_difficulty))
+    )
+    game_status.setText(tr("fill_empty_cells"))
     update_coins_labels()
     stack.setCurrentIndex(2)
 
@@ -526,15 +539,17 @@ def clear_board():
                 cells[k].setText("")
             k += 1
 
-    game_status.setText("Поле очищено")
+    game_status.setText(tr("board_cleared"))
+
 
 def update_hint_button():
-    hint_button.setText("Подсказка")
+    hint_button.setText(tr("hint"))
 
     if hints_used >= len(hint_prices):
         hint_button.setEnabled(False)
     else:
         hint_button.setEnabled(True)
+
 
 def buy_hint():
     global coins, hints_used
@@ -543,28 +558,28 @@ def buy_hint():
         return
 
     if level_completed:
-        game_status.setText("Уровень уже пройден")
+        game_status.setText(tr("level_completed"))
         return
 
     if hints_used >= len(hint_prices):
-        game_status.setText("Подсказки на этом уровне закончились")
+        game_status.setText(tr("hints_finished"))
         update_hint_button()
         return
 
     current_hint_price = hint_prices[hints_used]
 
     choice = show_choice_dialog(
-        "Подсказка",
-        f"Купить подсказку за {current_hint_price} очков?",
-        "Отмена",
-        "Купить"
+        tr("hint"),
+        tr("buy_hint_text", price=current_hint_price),
+        tr("cancel"),
+        tr("buy")
     )
 
     if choice != "right":
         return
 
     if coins < current_hint_price:
-        show_info_dialog("Недостаточно средств", "Недостаточно средств")
+        show_info_dialog(tr("not_enough_money"), tr("not_enough_money"))
         return
 
     empty_positions = []
@@ -578,7 +593,7 @@ def buy_hint():
                 empty_positions.append((i, j))
 
     if not empty_positions:
-        show_info_dialog("Подсказка", "Нет пустых клеток для подсказки")
+        show_info_dialog(tr("hint"), tr("no_empty_cells"))
         return
 
     row, col = random.choice(empty_positions)
@@ -603,7 +618,7 @@ def buy_hint():
     update_stats_labels()
     update_hint_button()
 
-    game_status.setText(f"Подсказка куплена: -{current_hint_price} очков")
+    game_status.setText(tr("hint_bought", price=current_hint_price))
 
 
 def check_game():
@@ -613,22 +628,22 @@ def check_game():
         return
 
     if level_completed:
-        game_status.setText("Этот уровень уже пройден")
+        game_status.setText(tr("already_completed"))
         return
 
     size = len(current_board_template)
     current_board = get_board_from_inputs(size)
 
     if current_board is None:
-        game_status.setText("Заполните все клетки числами")
+        game_status.setText(tr("fill_all_cells"))
         return
 
     if not numbers_in_range(current_board):
-        game_status.setText(f"Числа должны быть от 1 до {size * size}")
+        game_status.setText(tr("numbers_range", max_number=size * size))
         return
 
     if has_duplicates(current_board):
-        game_status.setText("Числа не должны повторяться")
+        game_status.setText(tr("no_duplicates"))
         return
 
     if check_magic_square(current_board):
@@ -642,10 +657,11 @@ def check_game():
         save_progress_data()
         update_coins_labels()
         update_stats_labels()
-        game_status.setText(f"Победа! +{reward} очков")
+        game_status.setText(tr("victory_reward", reward=reward))
         show_win_dialog()
     else:
-        game_status.setText("Неверно. Попробуйте ещё раз")
+        game_status.setText(tr("wrong_try_again"))
+
 
 # -------------------- Страница меню --------------------
 menu_page = QWidget()
@@ -1062,6 +1078,68 @@ stack.addWidget(settings_page)
 
 window.setLayout(stack)
 
+# -------------------- Обновление языка --------------------
+def update_language_texts():
+    window.setWindowTitle(tr("window_title"))
+
+    title_label.setText(tr("title"))
+    subtitle_label.setText(tr("subtitle"))
+    play_button.setText(tr("new_game"))
+    rules_button.setText(tr("rules"))
+    stats_button.setText(tr("statistics"))
+    settings_button.setText(tr("settings"))
+    exit_button.setText(tr("exit"))
+
+    title_level.setText(tr("choose_game"))
+    subtitle_level.setText(tr("choose_size_difficulty"))
+    level_back.setText(tr("back_arrow"))
+    size_label.setText(tr("field_size"))
+    difficulty_label.setText(tr("difficulty"))
+    easy_button.setText(tr("easy"))
+    medium_button.setText(tr("medium"))
+    hard_button.setText(tr("hard"))
+    start_button.setText(tr("start"))
+
+    if current_board_template:
+        game_title.setText(
+            tr("game_title", size=selected_size, difficulty=get_difficulty_name(selected_difficulty))
+        )
+    else:
+        game_title.setText(tr("game"))
+
+    game_back_top.setText(tr("back_arrow"))
+    check_button.setText(tr("check"))
+    clear_button.setText(tr("clear"))
+    hint_button.setText(tr("hint"))
+
+    title_rules.setText(tr("rules"))
+    rules_subtitle.setText(tr("rules_subtitle"))
+    rules_text.setText(tr("rules_text"))
+    rules_back.setText(tr("back"))
+
+    title_stats.setText(tr("statistics"))
+    stats_subtitle.setText(tr("stats_subtitle"))
+    stats_played_label.setText(tr("played_games"))
+    stats_won_label.setText(tr("won_games"))
+    stats_coins_label.setText(tr("total_coins"))
+    stats_back.setText(tr("back"))
+
+    title_settings.setText(tr("settings"))
+    settings_subtitle.setText(tr("settings_subtitle"))
+    theme_label.setText(tr("interface_theme"))
+    light_theme_button.setText(tr("light_theme"))
+    dark_theme_button.setText(tr("dark_theme"))
+    language_label.setText(tr("interface_language"))
+    music_volume_label.setText(tr("music_volume"))
+    sound_volume_label.setText(tr("sound_volume"))
+    settings_back.setText(tr("back"))
+
+    update_coins_labels()
+    update_size_buttons()
+    update_timer_label()
+    update_volume_labels()
+
+
 # -------------------- Стили --------------------
 window.setStyleSheet(style_sheet)
 
@@ -1119,6 +1197,7 @@ music_volume_slider.setValue(music_volume)
 sound_volume_slider.setValue(sound_volume)
 update_volume_labels()
 
+update_language_texts()
 apply_theme(current_theme)
 
 window.show()
