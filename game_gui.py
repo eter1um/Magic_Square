@@ -3,6 +3,12 @@ import random
 
 from localization import get_text
 
+from audio import (
+    setup_audio, play_music,
+    set_music_volume, set_sound_volume,
+    play_click, play_win, play_error
+)
+
 from game_logic import (
     load_boards, check_magic_square, numbers_in_range,
     has_duplicates, load_progress, save_progress
@@ -58,6 +64,11 @@ current_theme = progress_data["theme"]
 current_language = progress_data["language"]
 music_volume = progress_data["music_volume"]
 sound_volume = progress_data["sound_volume"]
+
+setup_audio()
+set_music_volume(music_volume)
+set_sound_volume(sound_volume)
+play_music()
 
 current_board_template = []
 current_solution = []
@@ -292,6 +303,7 @@ def change_music_volume(value):
     global music_volume
 
     music_volume = value
+    set_music_volume(value)
     update_volume_labels()
     save_progress_data()
 
@@ -300,6 +312,7 @@ def change_sound_volume(value):
     global sound_volume
 
     sound_volume = value
+    set_sound_volume(value)
     update_volume_labels()
     save_progress_data()
 
@@ -558,10 +571,12 @@ def buy_hint():
         return
 
     if level_completed:
+        play_error()
         game_status.setText(tr("level_completed"))
         return
 
     if hints_used >= len(hint_prices):
+        play_error()
         game_status.setText(tr("hints_finished"))
         update_hint_button()
         return
@@ -579,6 +594,7 @@ def buy_hint():
         return
 
     if coins < current_hint_price:
+        play_error()
         show_info_dialog(tr("not_enough_money"), tr("not_enough_money"))
         return
 
@@ -593,6 +609,7 @@ def buy_hint():
                 empty_positions.append((i, j))
 
     if not empty_positions:
+        play_error()
         show_info_dialog(tr("hint"), tr("no_empty_cells"))
         return
 
@@ -612,6 +629,7 @@ def buy_hint():
 
     coins -= current_hint_price
     hints_used += 1
+    play_click()
 
     save_progress_data()
     update_coins_labels()
@@ -635,18 +653,22 @@ def check_game():
     current_board = get_board_from_inputs(size)
 
     if current_board is None:
+        play_error()
         game_status.setText(tr("fill_all_cells"))
         return
 
     if not numbers_in_range(current_board):
+        play_error()
         game_status.setText(tr("numbers_range", max_number=size * size))
         return
 
     if has_duplicates(current_board):
+        play_error()
         game_status.setText(tr("no_duplicates"))
         return
 
     if check_magic_square(current_board):
+        play_win()
         level_completed = True
         timer.stop()
         games_won += 1
@@ -660,6 +682,7 @@ def check_game():
         game_status.setText(tr("victory_reward", reward=reward))
         show_win_dialog()
     else:
+        play_error()
         game_status.setText(tr("wrong_try_again"))
 
 
@@ -879,16 +902,8 @@ rules_card.setFixedWidth(400)
 rules_card_layout = QVBoxLayout()
 rules_card.setLayout(rules_card_layout)
 
-rules_text = QLabel(
-    "Цель игры:\n"
-    "заполнить пустые клетки так, чтобы получился магический квадрат.\n\n"
-    "Правила:\n"
-    "- суммы в каждой строке должны быть одинаковыми;\n"
-    "- суммы в каждом столбце должны быть одинаковыми;\n"
-    "- суммы на обеих диагоналях тоже должны совпадать;\n"
-    "- каждое число можно использовать только один раз.\n\n"
-    "После заполнения нажмите кнопку «Проверить»."
-)
+rules_text = QLabel()
+
 rules_text.setWordWrap(True)
 rules_text.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
@@ -1144,6 +1159,20 @@ def update_language_texts():
 window.setStyleSheet(style_sheet)
 
 # -------------------- События --------------------
+click_buttons = [
+    play_button, rules_button, stats_button, settings_button, exit_button,
+    level_back, start_button,
+    rules_back, stats_back, settings_back,
+    game_back_top,
+    size3_button, size4_button, size5_button,
+    easy_button, medium_button, hard_button,
+    check_button, clear_button, hint_button,
+    light_theme_button, dark_theme_button
+]
+
+for button in click_buttons:
+    button.clicked.connect(play_click)
+
 exit_button.clicked.connect(window.close)
 play_button.clicked.connect(lambda: stack.setCurrentIndex(1))
 rules_button.clicked.connect(lambda: stack.setCurrentIndex(3))
