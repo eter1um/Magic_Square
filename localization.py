@@ -84,6 +84,7 @@ translations = {
         "numbers_range": "Числа должны быть от 1 до {max_number}",
         "no_duplicates": "Числа не должны повторяться",
         "victory_reward": "Победа! +{reward} очков",
+        "victory_reward_time": "Победа! +{reward} очков, бонус за время +{bonus}. Всего: +{total}",
         "wrong_try_again": "Неверно. Попробуйте ещё раз",
         "ok": "Ок"
     },
@@ -173,6 +174,7 @@ translations = {
         "numbers_range": "Numbers must be from 1 to {max_number}",
         "no_duplicates": "Numbers must not repeat",
         "victory_reward": "Victory! +{reward} points",
+        "victory_reward_time": "Victory! +{reward} points, time bonus +{bonus}. Total: +{total}",
         "wrong_try_again": "Wrong. Try again",
         "ok": "OK"
     }

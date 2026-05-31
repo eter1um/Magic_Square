@@ -95,6 +95,15 @@ def tr(key, **kwargs):
 def get_difficulty_name(difficulty):
     return tr(difficulty)
 
+def get_time_bonus(seconds):
+    if seconds <= 10:
+        return 10
+    elif seconds <= 15:
+        return 5
+    elif seconds <= 20:
+        return 3
+    return 0
+
 
 # -------------------- Таймер --------------------
 def update_timer_label():
@@ -303,6 +312,7 @@ def try_buy_size(size):
         return
 
     if coins < price:
+        play_error()
         show_info_dialog(tr("not_enough_money"), tr("not_enough_money"))
         return
 
@@ -540,13 +550,24 @@ def check_game():
         games_won += 1
 
         reward = reward_table[selected_size][selected_difficulty]
-        coins += reward
+        time_bonus = get_time_bonus(game_seconds)
+        total_reward = reward + time_bonus
+
+        coins += total_reward
 
         save_progress_data()
         update_coins_labels()
         update_stats_labels()
-        game_status.setText(tr("victory_reward", reward=reward))
+
+        if time_bonus > 0:
+            game_status.setText(
+                tr("victory_reward_time", reward=reward, bonus=time_bonus, total=total_reward)
+            )
+        else:
+            game_status.setText(tr("victory_reward", reward=reward))
+
         show_win_dialog()
+
     else:
         play_error()
         game_status.setText(tr("wrong_try_again"))

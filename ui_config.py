@@ -6,8 +6,8 @@ subtitle_font_size = 12
 section_font_size = 14
 
 unlock_prices = {
-    4: 50,
-    5: 100
+    4: 75,
+    5: 150
 }
 reward_table = {
     3: {
