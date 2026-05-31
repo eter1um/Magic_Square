@@ -1,10 +1,10 @@
 {
-    "coins": 5,
+    "coins": 20,
     "unlocked_4x4": true,
     "unlocked_5x5": false,
-    "games_played": 15,
-    "games_won": 5,
-    "theme": "light",
+    "games_played": 36,
+    "games_won": 7,
+    "theme": "dark",
     "language": "ru",
     "music_volume": 10,
     "sound_volume": 10

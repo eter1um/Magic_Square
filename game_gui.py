@@ -1,5 +1,7 @@
 import random
 
+from paths import resource_path, save_path
+
 from localization import get_text
 
 from audio import (
@@ -57,7 +59,7 @@ section_font.setPointSize(section_font_size)
 section_font.setBold(True)
 
 # -------------------- Состояние игры --------------------
-save_file = "save.json"
+save_file = save_path("save.json")
 
 progress_data = load_progress(save_file)
 coins = progress_data["coins"]
@@ -394,11 +396,11 @@ def start_game():
     timer.start(1000)
 
     if selected_size == 3:
-        boards = load_boards("levels/3x3.json")
+        boards = load_boards(resource_path("levels/3x3.json"))
     elif selected_size == 4:
-        boards = load_boards("levels/4x4.json")
+        boards = load_boards(resource_path("levels/4x4.json"))
     elif selected_size == 5:
-        boards = load_boards("levels/5x5.json")
+        boards = load_boards(resource_path("levels/5x5.json"))
     else:
         return
 

@@ -1,4 +1,5 @@
 import os
+from paths import resource_path
 
 from PyQt6.QtCore import QUrl
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput, QSoundEffect
@@ -28,10 +29,10 @@ def setup_audio():
     win_sound = QSoundEffect()
     error_sound = QSoundEffect()
 
-    music_path = os.path.abspath("assets/music/background.mp3")
-    click_path = os.path.abspath("assets/sounds/click.wav")
-    win_path = os.path.abspath("assets/sounds/win.wav")
-    error_path = os.path.abspath("assets/sounds/error.wav")
+    music_path = resource_path("assets/music/background.mp3")
+    click_path = resource_path("assets/sounds/click.wav")
+    win_path = resource_path("assets/sounds/win.wav")
+    error_path = resource_path("assets/sounds/error.wav")
 
     if os.path.exists(music_path):
         music_player.setSource(QUrl.fromLocalFile(music_path))
