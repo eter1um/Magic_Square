@@ -1,4 +1,3 @@
-import sys
 import random
 
 from localization import get_text
@@ -14,23 +13,31 @@ from game_logic import (
     has_duplicates, load_progress, save_progress
 )
 
+from dialogs import (
+    show_info_dialog as create_info_dialog,
+    show_choice_dialog as create_choice_dialog
+)
+
+from board_ui import (
+    build_game_board as create_game_board,
+    get_board_from_inputs
+)
+
+from pages import (
+    create_menu_page, create_level_page, create_game_page,
+    create_rules_page, create_stats_page, create_settings_page
+)
+
 from ui_config import (
     window_width, window_height,
     title_font_size, subtitle_font_size, section_font_size,
     style_sheet, dark_style_sheet, unlock_prices, hint_prices, reward_table
 )
 
-from PyQt6.QtWidgets import (
-    QApplication, QWidget, QPushButton, QLabel, QVBoxLayout,
-    QStackedLayout, QGridLayout, QLineEdit, QHBoxLayout,
-    QFrame, QDialog, QComboBox, QSlider
-)
+from PyQt6.QtWidgets import QWidget, QStackedLayout
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QFont
-
-
-app = QApplication(sys.argv)
 
 # -------------------- Главное окно --------------------
 window = QWidget()
@@ -51,6 +58,7 @@ section_font.setBold(True)
 
 # -------------------- Состояние игры --------------------
 save_file = "save.json"
+
 progress_data = load_progress(save_file)
 coins = progress_data["coins"]
 unlocked_4x4 = progress_data["unlocked_4x4"]
@@ -118,85 +126,24 @@ def get_current_style():
 
 
 def show_info_dialog(title, text):
-    dialog = QDialog(window)
-    dialog.setWindowTitle(title)
-    dialog.setModal(True)
-    dialog.setFixedWidth(360)
-    dialog.setStyleSheet(get_current_style())
-
-    layout = QVBoxLayout()
-    dialog.setLayout(layout)
-
-    text_label = QLabel(text)
-    text_label.setWordWrap(True)
-    text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    ok_button = QPushButton(tr("ok"))
-    ok_button.setFixedSize(120, 42)
-    ok_button.clicked.connect(dialog.accept)
-
-    button_row = QHBoxLayout()
-    button_row.addStretch(1)
-    button_row.addWidget(ok_button)
-    button_row.addStretch(1)
-
-    layout.addSpacing(10)
-    layout.addWidget(text_label)
-    layout.addSpacing(14)
-    layout.addLayout(button_row)
-    layout.addSpacing(6)
-
-    dialog.exec()
+    create_info_dialog(
+        window,
+        title,
+        text,
+        tr("ok"),
+        get_current_style()
+    )
 
 
 def show_choice_dialog(title, text, left_text, right_text):
-    result = {"choice": None}
-
-    dialog = QDialog(window)
-    dialog.setWindowTitle(title)
-    dialog.setModal(True)
-    dialog.setFixedWidth(350)
-    dialog.setStyleSheet(get_current_style())
-
-    layout = QVBoxLayout()
-    dialog.setLayout(layout)
-
-    text_label = QLabel(text)
-    text_label.setWordWrap(True)
-    text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    left_button = QPushButton(left_text)
-    right_button = QPushButton(right_text)
-
-    left_button.setFixedSize(150, 42)
-    right_button.setFixedSize(150, 42)
-
-    def choose_left():
-        result["choice"] = "left"
-        dialog.accept()
-
-    def choose_right():
-        result["choice"] = "right"
-        dialog.accept()
-
-    left_button.clicked.connect(choose_left)
-    right_button.clicked.connect(choose_right)
-
-    button_row = QHBoxLayout()
-    button_row.addStretch(1)
-    button_row.addWidget(left_button)
-    button_row.addSpacing(10)
-    button_row.addWidget(right_button)
-    button_row.addStretch(1)
-
-    layout.addSpacing(10)
-    layout.addWidget(text_label)
-    layout.addSpacing(14)
-    layout.addLayout(button_row)
-    layout.addSpacing(6)
-
-    dialog.exec()
-    return result["choice"]
+    return create_choice_dialog(
+        window,
+        title,
+        text,
+        left_text,
+        right_text,
+        get_current_style()
+    )
 
 
 # -------------------- Общие функции --------------------
@@ -242,18 +189,6 @@ def save_progress_data():
     progress_data["music_volume"] = music_volume
     progress_data["sound_volume"] = sound_volume
     save_progress(save_file, progress_data)
-
-
-def clear_layout(layout):
-    while layout.count():
-        item = layout.takeAt(0)
-        widget = item.widget()
-        child_layout = item.layout()
-
-        if widget is not None:
-            widget.deleteLater()
-        elif child_layout is not None:
-            clear_layout(child_layout)
 
 
 def set_selected_button(active_button, buttons):
@@ -414,80 +349,11 @@ def hide_cells_by_difficulty(board, difficulty):
     return puzzle
 
 
-def get_board_from_inputs(size):
-    result = []
-    k = 0
-
-    for i in range(size):
-        row = []
-        for j in range(size):
-            text = cells[k].text().strip()
-
-            if text == "":
-                return None
-
-            try:
-                num = int(text)
-            except ValueError:
-                return None
-
-            row.append(num)
-            k += 1
-
-        result.append(row)
-
-    return result
-
-
 def build_game_board(board):
     global cells, current_board_template
 
     current_board_template = [row[:] for row in board]
-    cells = []
-
-    clear_layout(grid)
-
-    size = len(board)
-
-    board_area = 300
-    cell_size = board_area // size
-
-    if size == 3:
-        font_size = 22
-    elif size == 4:
-        font_size = 18
-    else:
-        font_size = 16
-
-    for i in range(size):
-        for j in range(size):
-            value = board[i][j]
-
-            cell = QLineEdit()
-            cell.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            cell.setFixedSize(cell_size, cell_size)
-            cell.setMaxLength(2)
-            cell.setObjectName("gameCell")
-
-            cell_font = QFont()
-            cell_font.setPointSize(font_size)
-            cell_font.setBold(True)
-            cell.setFont(cell_font)
-
-            if value == 0:
-                cell.setText("")
-                cell.setReadOnly(False)
-                cell.setProperty("fixed", False)
-            else:
-                cell.setText(str(value))
-                cell.setReadOnly(True)
-                cell.setProperty("fixed", True)
-
-            cell.style().unpolish(cell)
-            cell.style().polish(cell)
-
-            cells.append(cell)
-            grid.addWidget(cell, i, j)
+    cells = create_game_board(grid, board)
 
 
 def show_win_dialog():
@@ -650,7 +516,7 @@ def check_game():
         return
 
     size = len(current_board_template)
-    current_board = get_board_from_inputs(size)
+    current_board = get_board_from_inputs(cells, size)
 
     if current_board is None:
         play_error()
@@ -687,400 +553,87 @@ def check_game():
 
 
 # -------------------- Страница меню --------------------
-menu_page = QWidget()
-menu_layout = QVBoxLayout()
-menu_page.setLayout(menu_layout)
+menu_page, menu_widgets = create_menu_page(title_font, subtitle_font)
 
-title_label = QLabel("Магический квадрат")
-title_label.setFont(title_font)
-title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-subtitle_label = QLabel("Логическая игра на заполнение магического квадрата")
-subtitle_label.setFont(subtitle_font)
-subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-play_button = QPushButton("Новая игра")
-rules_button = QPushButton("Правила")
-stats_button = QPushButton("Статистика")
-settings_button = QPushButton("Настройки")
-exit_button = QPushButton("Выход")
-
-for button in [play_button, rules_button, stats_button, settings_button, exit_button]:
-    button.setFixedSize(240, 52)
-
-menu_layout.addStretch(1)
-menu_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(8)
-menu_layout.addWidget(subtitle_label, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(70)
-menu_layout.addWidget(play_button, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(14)
-menu_layout.addWidget(rules_button, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(14)
-menu_layout.addWidget(stats_button, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(14)
-menu_layout.addWidget(settings_button, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addSpacing(14)
-menu_layout.addWidget(exit_button, alignment=Qt.AlignmentFlag.AlignCenter)
-menu_layout.addStretch(2)
+title_label = menu_widgets["title_label"]
+subtitle_label = menu_widgets["subtitle_label"]
+play_button = menu_widgets["play_button"]
+rules_button = menu_widgets["rules_button"]
+stats_button = menu_widgets["stats_button"]
+settings_button = menu_widgets["settings_button"]
+exit_button = menu_widgets["exit_button"]
 
 # -------------------- Страница выбора игры --------------------
-level_page = QWidget()
-level_layout = QVBoxLayout()
-level_page.setLayout(level_layout)
+level_page, level_widgets = create_level_page(title_font, section_font)
 
-title_level = QLabel("Новая игра")
-title_level.setFont(title_font)
-title_level.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-subtitle_level = QLabel("Выберите размер поля и сложность")
-subtitle_level.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-coins_label = QLabel("Очки: 0")
-coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-level_back = QPushButton("<-- Назад")
-level_back.setFixedSize(100, 36)
-
-size_label = QLabel("Размер поля")
-size_label.setFont(section_font)
-size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-difficulty_label = QLabel("Сложность")
-difficulty_label.setFont(section_font)
-difficulty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-size3_button = QPushButton("3x3")
-size4_button = QPushButton("4x4")
-size5_button = QPushButton("5x5")
-
-easy_button = QPushButton("Лёгкая")
-medium_button = QPushButton("Средняя")
-hard_button = QPushButton("Сложная")
-
-start_button = QPushButton("Начать")
-start_button.setFixedSize(240, 52)
-
-for btn in [size3_button, size4_button, size5_button]:
-    btn.setFixedSize(125, 46)
-
-for btn in [easy_button, medium_button, hard_button]:
-    btn.setFixedSize(125, 46)
-
-top_layout = QHBoxLayout()
-top_layout.addWidget(level_back, alignment=Qt.AlignmentFlag.AlignLeft)
-top_layout.addStretch(1)
-top_layout.addWidget(coins_label, alignment=Qt.AlignmentFlag.AlignRight)
-
-settings_card = QFrame()
-settings_card.setObjectName("card")
-settings_layout = QVBoxLayout()
-settings_card.setLayout(settings_layout)
-
-size_buttons_layout = QHBoxLayout()
-size_buttons_layout.setSpacing(12)
-size_buttons_layout.addWidget(size3_button)
-size_buttons_layout.addWidget(size4_button)
-size_buttons_layout.addWidget(size5_button)
-
-difficulty_buttons_layout = QHBoxLayout()
-difficulty_buttons_layout.setSpacing(12)
-difficulty_buttons_layout.addWidget(easy_button)
-difficulty_buttons_layout.addWidget(medium_button)
-difficulty_buttons_layout.addWidget(hard_button)
-
-settings_layout.addWidget(size_label)
-settings_layout.addSpacing(12)
-settings_layout.addLayout(size_buttons_layout)
-settings_layout.addSpacing(24)
-settings_layout.addWidget(difficulty_label)
-settings_layout.addSpacing(12)
-settings_layout.addLayout(difficulty_buttons_layout)
-
-level_layout.addSpacing(18)
-level_layout.addLayout(top_layout)
-level_layout.addSpacing(20)
-level_layout.addWidget(title_level)
-level_layout.addSpacing(6)
-level_layout.addWidget(subtitle_level)
-level_layout.addSpacing(28)
-level_layout.addWidget(settings_card, alignment=Qt.AlignmentFlag.AlignCenter)
-level_layout.addSpacing(30)
-level_layout.addWidget(start_button, alignment=Qt.AlignmentFlag.AlignCenter)
-level_layout.addStretch(1)
+title_level = level_widgets["title_level"]
+subtitle_level = level_widgets["subtitle_level"]
+coins_label = level_widgets["coins_label"]
+level_back = level_widgets["level_back"]
+size_label = level_widgets["size_label"]
+difficulty_label = level_widgets["difficulty_label"]
+size3_button = level_widgets["size3_button"]
+size4_button = level_widgets["size4_button"]
+size5_button = level_widgets["size5_button"]
+easy_button = level_widgets["easy_button"]
+medium_button = level_widgets["medium_button"]
+hard_button = level_widgets["hard_button"]
+start_button = level_widgets["start_button"]
 
 # -------------------- Страница игры --------------------
-game_page = QWidget()
-game_layout = QVBoxLayout()
-game_page.setLayout(game_layout)
+game_page, game_widgets = create_game_page(title_font)
 
-game_title = QLabel("Игра")
-game_title.setFont(title_font)
-game_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-game_status = QLabel("Заполните пустые клетки")
-game_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-game_timer_label = QLabel("Время: 00:00")
-game_timer_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-game_coins_label = QLabel("Очки: 0")
-game_coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-game_back_top = QPushButton("<-- Назад")
-game_back_top.setFixedSize(100, 36)
-
-game_top_layout = QHBoxLayout()
-game_top_layout.addWidget(game_back_top, alignment=Qt.AlignmentFlag.AlignLeft)
-game_top_layout.addStretch(1)
-
-game_info_layout = QVBoxLayout()
-game_info_layout.setSpacing(4)
-game_info_layout.addWidget(game_timer_label, alignment=Qt.AlignmentFlag.AlignRight)
-game_info_layout.addWidget(game_coins_label, alignment=Qt.AlignmentFlag.AlignRight)
-
-game_top_layout.addLayout(game_info_layout)
-
-grid_card = QFrame()
-grid_card.setObjectName("card")
-grid_card_layout = QVBoxLayout()
-grid_card.setLayout(grid_card_layout)
-
-grid_widget = QWidget()
-grid = QGridLayout()
-grid.setSpacing(8)
-grid.setContentsMargins(0, 0, 0, 0)
-grid_widget.setLayout(grid)
-
-grid_card_layout.addWidget(grid_widget, alignment=Qt.AlignmentFlag.AlignCenter)
-
-buttons_row = QHBoxLayout()
-buttons_row.setSpacing(12)
-
-check_button = QPushButton("Проверить")
-clear_button = QPushButton("Очистить")
-hint_button = QPushButton("Подсказка")
-
-for button in [check_button, clear_button, hint_button]:
-    button.setFixedSize(130, 48)
-
-buttons_row.addStretch(1)
-buttons_row.addWidget(check_button)
-buttons_row.addWidget(clear_button)
-buttons_row.addWidget(hint_button)
-buttons_row.addStretch(1)
-
-game_layout.addSpacing(18)
-game_layout.addLayout(game_top_layout)
-game_layout.addSpacing(20)
-game_layout.addWidget(game_title, alignment=Qt.AlignmentFlag.AlignCenter)
-game_layout.addSpacing(8)
-game_layout.addWidget(game_status, alignment=Qt.AlignmentFlag.AlignCenter)
-game_layout.addSpacing(22)
-game_layout.addWidget(grid_card, alignment=Qt.AlignmentFlag.AlignCenter)
-game_layout.addSpacing(22)
-game_layout.addLayout(buttons_row)
-game_layout.addStretch(1)
+game_title = game_widgets["game_title"]
+game_status = game_widgets["game_status"]
+game_timer_label = game_widgets["game_timer_label"]
+game_coins_label = game_widgets["game_coins_label"]
+game_back_top = game_widgets["game_back_top"]
+grid = game_widgets["grid"]
+check_button = game_widgets["check_button"]
+clear_button = game_widgets["clear_button"]
+hint_button = game_widgets["hint_button"]
 
 # -------------------- Страница правил --------------------
-rules_page = QWidget()
-rules_layout = QVBoxLayout()
-rules_page.setLayout(rules_layout)
+rules_page, rules_widgets = create_rules_page(title_font, subtitle_font)
 
-title_rules = QLabel("Правила")
-title_rules.setFont(title_font)
-title_rules.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-rules_subtitle = QLabel("Как играть в магический квадрат")
-rules_subtitle.setFont(subtitle_font)
-rules_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-rules_card = QFrame()
-rules_card.setObjectName("card")
-rules_card.setFixedWidth(400)
-
-rules_card_layout = QVBoxLayout()
-rules_card.setLayout(rules_card_layout)
-
-rules_text = QLabel()
-
-rules_text.setWordWrap(True)
-rules_text.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-
-rules_card_layout.addWidget(rules_text)
-
-rules_back = QPushButton("Назад")
-rules_back.setFixedSize(200, 50)
-
-rules_layout.addStretch(1)
-rules_layout.addWidget(title_rules, alignment=Qt.AlignmentFlag.AlignCenter)
-rules_layout.addSpacing(8)
-rules_layout.addWidget(rules_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
-rules_layout.addSpacing(24)
-rules_layout.addWidget(rules_card, alignment=Qt.AlignmentFlag.AlignCenter)
-rules_layout.addSpacing(24)
-rules_layout.addWidget(rules_back, alignment=Qt.AlignmentFlag.AlignCenter)
-rules_layout.addStretch(2)
+title_rules = rules_widgets["title_rules"]
+rules_subtitle = rules_widgets["rules_subtitle"]
+rules_text = rules_widgets["rules_text"]
+rules_back = rules_widgets["rules_back"]
 
 # -------------------- Страница статистики --------------------
-stats_page = QWidget()
-stats_layout = QVBoxLayout()
-stats_page.setLayout(stats_layout)
+stats_page, stats_widgets = create_stats_page(title_font, subtitle_font, section_font)
 
-title_stats = QLabel("Статистика")
-title_stats.setFont(title_font)
-title_stats.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-stats_subtitle = QLabel("Общий прогресс игрока")
-stats_subtitle.setFont(subtitle_font)
-stats_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-stats_card = QFrame()
-stats_card.setObjectName("card")
-stats_card.setFixedWidth(380)
-
-stats_card_layout = QVBoxLayout()
-stats_card.setLayout(stats_card_layout)
-
-stats_played_label = QLabel("Сыгранные игры:")
-stats_played_value = QLabel("0")
-
-stats_won_label = QLabel("Успешные игры:")
-stats_won_value = QLabel("0")
-
-stats_coins_label = QLabel("Общее число очков:")
-stats_coins_value = QLabel("0")
-
-for label in [stats_played_label, stats_won_label, stats_coins_label]:
-    label.setFont(section_font)
-
-stats_card_layout.addWidget(stats_played_label)
-stats_card_layout.addWidget(stats_played_value)
-stats_card_layout.addSpacing(12)
-
-stats_card_layout.addWidget(stats_won_label)
-stats_card_layout.addWidget(stats_won_value)
-stats_card_layout.addSpacing(12)
-
-stats_card_layout.addWidget(stats_coins_label)
-stats_card_layout.addWidget(stats_coins_value)
-
-stats_back = QPushButton("Назад")
-stats_back.setFixedSize(200, 50)
-
-stats_layout.addStretch(1)
-stats_layout.addWidget(title_stats, alignment=Qt.AlignmentFlag.AlignCenter)
-stats_layout.addSpacing(8)
-stats_layout.addWidget(stats_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
-stats_layout.addSpacing(24)
-stats_layout.addWidget(stats_card, alignment=Qt.AlignmentFlag.AlignCenter)
-stats_layout.addSpacing(24)
-stats_layout.addWidget(stats_back, alignment=Qt.AlignmentFlag.AlignCenter)
-stats_layout.addStretch(2)
+title_stats = stats_widgets["title_stats"]
+stats_subtitle = stats_widgets["stats_subtitle"]
+stats_played_label = stats_widgets["stats_played_label"]
+stats_played_value = stats_widgets["stats_played_value"]
+stats_won_label = stats_widgets["stats_won_label"]
+stats_won_value = stats_widgets["stats_won_value"]
+stats_coins_label = stats_widgets["stats_coins_label"]
+stats_coins_value = stats_widgets["stats_coins_value"]
+stats_back = stats_widgets["stats_back"]
 
 # -------------------- Страница настроек --------------------
-settings_page = QWidget()
-settings_page_layout = QVBoxLayout()
-settings_page.setLayout(settings_page_layout)
+settings_page, settings_widgets = create_settings_page(
+    title_font, subtitle_font, section_font,
+    music_volume, sound_volume
+)
 
-title_settings = QLabel("Настройки")
-title_settings.setFont(title_font)
-title_settings.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-settings_subtitle = QLabel("Параметры интерфейса")
-settings_subtitle.setFont(subtitle_font)
-settings_subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-settings_card_page = QFrame()
-settings_card_page.setObjectName("card")
-settings_card_page.setFixedWidth(380)
-
-settings_card_page_layout = QVBoxLayout()
-settings_card_page.setLayout(settings_card_page_layout)
-
-theme_label = QLabel("Тема интерфейса")
-theme_label.setFont(section_font)
-theme_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-light_theme_button = QPushButton("Светлая")
-dark_theme_button = QPushButton("Тёмная")
-
-light_theme_button.setFixedSize(140, 46)
-dark_theme_button.setFixedSize(140, 46)
-
-theme_buttons_layout = QHBoxLayout()
-theme_buttons_layout.setSpacing(12)
-theme_buttons_layout.addWidget(light_theme_button)
-theme_buttons_layout.addWidget(dark_theme_button)
-
-settings_card_page_layout.addWidget(theme_label)
-settings_card_page_layout.addSpacing(12)
-settings_card_page_layout.addLayout(theme_buttons_layout)
-settings_card_page_layout.addSpacing(24)
-
-language_label = QLabel("Язык интерфейса")
-language_label.setFont(section_font)
-language_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-language_combo = QComboBox()
-language_combo.addItem("Русский")
-language_combo.addItem("English")
-language_combo.setFixedHeight(42)
-
-settings_card_page_layout.addWidget(language_label)
-settings_card_page_layout.addSpacing(10)
-settings_card_page_layout.addWidget(language_combo)
-
-settings_card_page_layout.addSpacing(24)
-
-music_volume_label = QLabel("Громкость музыки")
-music_volume_label.setFont(section_font)
-music_volume_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-music_volume_value = QLabel("50%")
-music_volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-music_volume_slider = QSlider(Qt.Orientation.Horizontal)
-music_volume_slider.setMinimum(0)
-music_volume_slider.setMaximum(100)
-music_volume_slider.setValue(music_volume)
-
-settings_card_page_layout.addWidget(music_volume_label)
-settings_card_page_layout.addSpacing(6)
-settings_card_page_layout.addWidget(music_volume_value)
-settings_card_page_layout.addWidget(music_volume_slider)
-
-settings_card_page_layout.addSpacing(18)
-
-sound_volume_label = QLabel("Громкость звуков")
-sound_volume_label.setFont(section_font)
-sound_volume_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-sound_volume_value = QLabel("50%")
-sound_volume_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-sound_volume_slider = QSlider(Qt.Orientation.Horizontal)
-sound_volume_slider.setMinimum(0)
-sound_volume_slider.setMaximum(100)
-sound_volume_slider.setValue(sound_volume)
-
-settings_card_page_layout.addWidget(sound_volume_label)
-settings_card_page_layout.addSpacing(6)
-settings_card_page_layout.addWidget(sound_volume_value)
-settings_card_page_layout.addWidget(sound_volume_slider)
-
-settings_back = QPushButton("Назад")
-settings_back.setFixedSize(200, 50)
-
-settings_page_layout.addStretch(1)
-settings_page_layout.addWidget(title_settings, alignment=Qt.AlignmentFlag.AlignCenter)
-settings_page_layout.addSpacing(8)
-settings_page_layout.addWidget(settings_subtitle, alignment=Qt.AlignmentFlag.AlignCenter)
-settings_page_layout.addSpacing(24)
-settings_page_layout.addWidget(settings_card_page, alignment=Qt.AlignmentFlag.AlignCenter)
-settings_page_layout.addSpacing(24)
-settings_page_layout.addWidget(settings_back, alignment=Qt.AlignmentFlag.AlignCenter)
-settings_page_layout.addStretch(2)
+title_settings = settings_widgets["title_settings"]
+settings_subtitle = settings_widgets["settings_subtitle"]
+theme_label = settings_widgets["theme_label"]
+light_theme_button = settings_widgets["light_theme_button"]
+dark_theme_button = settings_widgets["dark_theme_button"]
+language_label = settings_widgets["language_label"]
+language_combo = settings_widgets["language_combo"]
+music_volume_label = settings_widgets["music_volume_label"]
+music_volume_value = settings_widgets["music_volume_value"]
+music_volume_slider = settings_widgets["music_volume_slider"]
+sound_volume_label = settings_widgets["sound_volume_label"]
+sound_volume_value = settings_widgets["sound_volume_value"]
+sound_volume_slider = settings_widgets["sound_volume_slider"]
+settings_back = settings_widgets["settings_back"]
 
 # -------------------- Stack --------------------
 stack = QStackedLayout()
@@ -1209,25 +762,23 @@ music_volume_slider.valueChanged.connect(change_music_volume)
 sound_volume_slider.valueChanged.connect(change_sound_volume)
 
 # -------------------- Начальные состояния --------------------
-select_size(3)
-select_difficulty("easy")
-update_coins_labels()
-update_size_buttons()
-update_stats_labels()
-update_hint_button()
-reset_timer()
+def start_app():
+    select_size(3)
+    select_difficulty("easy")
+    update_coins_labels()
+    update_size_buttons()
+    update_stats_labels()
+    update_hint_button()
+    reset_timer()
 
-if current_language == "ru":
-    language_combo.setCurrentIndex(0)
-else:
-    language_combo.setCurrentIndex(1)
+    if current_language == "ru":
+        language_combo.setCurrentIndex(0)
+    else:
+        language_combo.setCurrentIndex(1)
 
-music_volume_slider.setValue(music_volume)
-sound_volume_slider.setValue(sound_volume)
-update_volume_labels()
+    music_volume_slider.setValue(music_volume)
+    sound_volume_slider.setValue(sound_volume)
+    update_volume_labels()
 
-update_language_texts()
-apply_theme(current_theme)
-
-window.show()
-sys.exit(app.exec())
+    update_language_texts()
+    apply_theme(current_theme)
