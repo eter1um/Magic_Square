@@ -1,6 +1,9 @@
+.venv/
 __pycache__/
 *.pyc
-.venv/
-venv/
-.idea/
-.vscode/
+
+build/
+dist/
+*.spec
+
+*.exe
