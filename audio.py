@@ -11,6 +11,10 @@ click_sound = None
 win_sound = None
 error_sound = None
 
+def repeat_music(status):
+    if status == QMediaPlayer.MediaStatus.EndOfMedia:
+        music_player.setPosition(0)
+        music_player.play()
 
 def setup_audio():
     global music_player, music_output
@@ -19,7 +23,7 @@ def setup_audio():
     music_player = QMediaPlayer()
     music_output = QAudioOutput()
     music_player.setAudioOutput(music_output)
-
+    music_player.mediaStatusChanged.connect(repeat_music)
     click_sound = QSoundEffect()
     win_sound = QSoundEffect()
     error_sound = QSoundEffect()
