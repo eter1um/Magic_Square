@@ -35,6 +35,8 @@ def side_diag_sum(board):
         sum_side_diag += board[i][n - 1 - i]
     return sum_side_diag
 
+def get_magic_constant(size):
+    return size * (size * size + 1) // 2
 
 def check_magic_square(board):
     n = len(board)

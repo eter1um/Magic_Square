@@ -129,7 +129,7 @@ def create_level_page(title_font, section_font):
     settings_layout.addSpacing(12)
     settings_layout.addLayout(difficulty_buttons_layout)
 
-    level_layout.addSpacing(18)
+    level_layout.addSpacing(14)
     level_layout.addLayout(top_layout)
     level_layout.addSpacing(20)
     level_layout.addWidget(title_level)
@@ -178,6 +178,9 @@ def create_game_page(title_font):
     game_coins_label = QLabel("Очки: 0")
     game_coins_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
+    game_magic_label = QLabel("Магическая сумма: 15")
+    game_magic_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
     game_back_top = QPushButton("<-- Назад")
     game_back_top.setFixedSize(100, 36)
 
@@ -189,6 +192,7 @@ def create_game_page(title_font):
     game_info_layout.setSpacing(4)
     game_info_layout.addWidget(game_timer_label, alignment=Qt.AlignmentFlag.AlignRight)
     game_info_layout.addWidget(game_coins_label, alignment=Qt.AlignmentFlag.AlignRight)
+    game_info_layout.addWidget(game_magic_label, alignment=Qt.AlignmentFlag.AlignRight)
 
     game_top_layout.addLayout(game_info_layout)
 
@@ -221,15 +225,27 @@ def create_game_page(title_font):
     buttons_row.addWidget(hint_button)
     buttons_row.addStretch(1)
 
-    game_layout.addSpacing(18)
+    game_layout.addSpacing(0)
     game_layout.addLayout(game_top_layout)
-    game_layout.addSpacing(20)
+    game_layout.addSpacing(14)
     game_layout.addWidget(game_title, alignment=Qt.AlignmentFlag.AlignCenter)
     game_layout.addSpacing(8)
     game_layout.addWidget(game_status, alignment=Qt.AlignmentFlag.AlignCenter)
-    game_layout.addSpacing(22)
-    game_layout.addWidget(grid_card, alignment=Qt.AlignmentFlag.AlignCenter)
-    game_layout.addSpacing(22)
+    board_area = QWidget()
+    board_area.setFixedHeight(390)
+
+    board_area_layout = QVBoxLayout()
+    board_area_layout.setContentsMargins(0, 0, 0, 0)
+    board_area_layout.setSpacing(0)
+    board_area.setLayout(board_area_layout)
+
+    board_area_layout.addStretch(1)
+    board_area_layout.addWidget(grid_card, alignment=Qt.AlignmentFlag.AlignCenter)
+    board_area_layout.addStretch(1)
+
+    game_layout.addSpacing(16)
+    game_layout.addWidget(board_area)
+    game_layout.addSpacing(14)
     game_layout.addLayout(buttons_row)
     game_layout.addStretch(1)
 
@@ -238,6 +254,7 @@ def create_game_page(title_font):
         "game_status": game_status,
         "game_timer_label": game_timer_label,
         "game_coins_label": game_coins_label,
+        "game_magic_label": game_magic_label,
         "game_back_top": game_back_top,
         "grid": grid,
         "check_button": check_button,

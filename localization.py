@@ -30,6 +30,7 @@ translations = {
         "game_title": "Игра {size}x{size} | {difficulty}",
         "fill_empty_cells": "Заполните пустые клетки",
         "time": "Время: {minutes:02}:{seconds:02}",
+        "magic_constant": "Магическая сумма: {value}",
 
         "check": "Проверить",
         "clear": "Очистить",
@@ -120,6 +121,7 @@ translations = {
         "game_title": "Game {size}x{size} | {difficulty}",
         "fill_empty_cells": "Fill in the empty cells",
         "time": "Time: {minutes:02}:{seconds:02}",
+        "magic_constant": "Magic sum: {value}",
 
         "check": "Check",
         "clear": "Clear",

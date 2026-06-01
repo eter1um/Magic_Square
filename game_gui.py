@@ -12,7 +12,8 @@ from audio import (
 
 from game_logic import (
     load_boards, check_magic_square, numbers_in_range,
-    has_duplicates, load_progress, save_progress
+    has_duplicates, load_progress, save_progress,
+    get_magic_constant
 )
 
 from dialogs import (
@@ -412,6 +413,11 @@ def start_game():
     game_title.setText(
         tr("game_title", size=selected_size, difficulty=get_difficulty_name(selected_difficulty))
     )
+
+    game_magic_label.setText(
+        tr("magic_constant", value=get_magic_constant(selected_size))
+    )
+
     game_status.setText(tr("fill_empty_cells"))
     update_coins_labels()
     stack.setCurrentIndex(2)
@@ -610,6 +616,7 @@ game_title = game_widgets["game_title"]
 game_status = game_widgets["game_status"]
 game_timer_label = game_widgets["game_timer_label"]
 game_coins_label = game_widgets["game_coins_label"]
+game_magic_label = game_widgets["game_magic_label"]
 game_back_top = game_widgets["game_back_top"]
 grid = game_widgets["grid"]
 check_button = game_widgets["check_button"]
@@ -697,6 +704,12 @@ def update_language_texts():
         )
     else:
         game_title.setText(tr("game"))
+
+    game_magic_label.setText(
+        tr("magic_constant", value=get_magic_constant(selected_size))
+    )
+
+    game_back_top.setText(tr("back_arrow"))
 
     game_back_top.setText(tr("back_arrow"))
     check_button.setText(tr("check"))
