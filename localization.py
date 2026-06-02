@@ -60,6 +60,9 @@ translations = {
         "interface_language": "Язык интерфейса",
         "music_volume": "Громкость музыки",
         "sound_volume": "Громкость звуков",
+        "show_sums": "Показывать суммы (строк и диагоналей)",
+        "show_sums_on": "Да",
+        "show_sums_off": "Нет",
 
         "purchase": "Покупка",
         "buy_field": "Купить поле {size}x{size} за {price} очков?",
@@ -151,6 +154,9 @@ translations = {
         "interface_language": "Interface language",
         "music_volume": "Music volume",
         "sound_volume": "Sound volume",
+        "show_sums": "Show sums (lines and diagonals)",
+        "show_sums_on": "Yes",
+        "show_sums_off": "No",
 
         "purchase": "Purchase",
         "buy_field": "Buy {size}x{size} field for {price} points?",

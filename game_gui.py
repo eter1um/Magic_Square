@@ -37,9 +37,9 @@ from ui_config import (
     style_sheet, dark_style_sheet, unlock_prices, hint_prices, reward_table
 )
 
-from PyQt6.QtWidgets import QWidget, QStackedLayout
+from PyQt6.QtWidgets import QWidget, QStackedLayout, QLabel
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont
 
 # -------------------- Главное окно --------------------
@@ -75,6 +75,7 @@ current_theme = progress_data["theme"]
 current_language = progress_data["language"]
 music_volume = progress_data["music_volume"]
 sound_volume = progress_data["sound_volume"]
+show_sums = progress_data["show_sums"]
 
 setup_audio()
 set_music_volume(music_volume)
@@ -85,6 +86,9 @@ current_board_template = []
 current_solution = []
 current_puzzle = []
 cells = []
+row_sum_labels = []
+col_sum_labels = []
+diag_sum_labels = []
 level_completed = False
 game_seconds = 0
 timer = QTimer()
@@ -163,6 +167,143 @@ def update_coins_labels():
     coins_label.setText(tr("coins", coins=coins))
     game_coins_label.setText(tr("coins", coins=coins))
 
+def get_current_board_values():
+    if not current_board_template:
+        return []
+
+    size = len(current_board_template)
+    board = []
+    k = 0
+
+    for i in range(size):
+        row = []
+
+        for j in range(size):
+            text = cells[k].text().strip()
+
+            if text == "":
+                row.append(0)
+            else:
+                try:
+                    row.append(int(text))
+                except ValueError:
+                    row.append(0)
+
+            k += 1
+
+        board.append(row)
+
+    return board
+
+
+def clear_sum_labels():
+    global row_sum_labels, col_sum_labels, diag_sum_labels
+
+    for label in row_sum_labels + col_sum_labels + diag_sum_labels:
+        label.deleteLater()
+
+    row_sum_labels = []
+    col_sum_labels = []
+    diag_sum_labels = []
+
+
+def create_sum_label():
+    label = QLabel(grid_card)
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.setFixedSize(34, 20)
+    label.raise_()
+    label.setVisible(show_sums)
+    return label
+
+
+def create_sum_labels(size):
+    global row_sum_labels, col_sum_labels, diag_sum_labels
+
+    clear_sum_labels()
+
+    for i in range(size):
+        row_sum_labels.append(create_sum_label())
+
+    for j in range(size):
+        col_sum_labels.append(create_sum_label())
+
+    for i in range(2):
+        diag_sum_labels.append(create_sum_label())
+
+
+def update_sum_labels_position():
+    if not cells:
+        return
+
+    size = len(current_board_template)
+    grid_widget = grid.parentWidget()
+
+    base_x = grid_widget.x()
+    base_y = grid_widget.y()
+
+    for i in range(size):
+        right_cell = cells[i * size + (size - 1)]
+
+        row_sum_labels[i].move(
+            base_x + right_cell.x() + right_cell.width() - 4,
+            base_y + right_cell.y() + right_cell.height() // 2 - 10
+        )
+
+    for j in range(size):
+        bottom_cell = cells[(size - 1) * size + j]
+
+        col_sum_labels[j].move(
+            base_x + bottom_cell.x() + bottom_cell.width() // 2 - 17,
+            base_y + bottom_cell.y() + bottom_cell.height() + 2
+        )
+
+    bottom_left_cell = cells[(size - 1) * size]
+    bottom_right_cell = cells[size * size - 1]
+
+    diag_sum_labels[0].move(
+        base_x + bottom_right_cell.x() + bottom_right_cell.width() - 4,
+        base_y + bottom_right_cell.y() + bottom_right_cell.height() + 2
+    )
+
+    diag_sum_labels[1].move(
+        base_x + bottom_left_cell.x() - 30,
+        base_y + bottom_left_cell.y() + bottom_left_cell.height() + 2
+    )
+
+
+def update_sum_hints():
+    if not current_board_template:
+        return
+
+    if not row_sum_labels or not col_sum_labels or not diag_sum_labels:
+        return
+    
+    if not show_sums:
+        return
+
+    size = len(current_board_template)
+    board = get_current_board_values()
+
+    for i in range(size):
+        row_sum_labels[i].setText(str(sum(board[i])))
+
+    for j in range(size):
+        total = 0
+        for i in range(size):
+            total += board[i][j]
+        col_sum_labels[j].setText(str(total))
+
+    main_diag = 0
+    side_diag = 0
+
+    for i in range(size):
+        main_diag += board[i][i]
+        side_diag += board[i][size - 1 - i]
+
+    diag_sum_labels[0].setText(str(main_diag))
+    diag_sum_labels[1].setText(str(side_diag))
+
+    update_sum_labels_position()
 
 def update_stats_labels():
     stats_played_value.setText(str(games_played))
@@ -200,6 +341,7 @@ def save_progress_data():
     progress_data["language"] = current_language
     progress_data["music_volume"] = music_volume
     progress_data["sound_volume"] = sound_volume
+    progress_data["show_sums"] = show_sums
     save_progress(save_file, progress_data)
 
 
@@ -263,6 +405,28 @@ def change_sound_volume(value):
     update_volume_labels()
     save_progress_data()
 
+def set_sum_labels_visible(visible):
+    for label in row_sum_labels + col_sum_labels + diag_sum_labels:
+        label.setVisible(visible)
+
+
+def update_show_sums_buttons():
+    if show_sums:
+        set_selected_button(show_sums_on_button, [show_sums_on_button, show_sums_off_button])
+    else:
+        set_selected_button(show_sums_off_button, [show_sums_on_button, show_sums_off_button])
+
+
+def change_show_sums(value):
+    global show_sums
+
+    show_sums = value
+    set_sum_labels_visible(show_sums)
+    update_show_sums_buttons()
+    save_progress_data()
+
+    if show_sums:
+        update_sum_hints()
 
 def select_size(size):
     global selected_size
@@ -368,6 +532,13 @@ def build_game_board(board):
     current_board_template = [row[:] for row in board]
     cells = create_game_board(grid, board)
 
+    size = len(board)
+    create_sum_labels(size)
+
+    for cell in cells:
+        if not cell.isReadOnly():
+            cell.textChanged.connect(update_sum_hints)
+
 
 def show_win_dialog():
     choice = show_choice_dialog(
@@ -421,7 +592,7 @@ def start_game():
     game_status.setText(tr("fill_empty_cells"))
     update_coins_labels()
     stack.setCurrentIndex(2)
-
+    QTimer.singleShot(0, update_sum_hints)
 
 def clear_board():
     if not current_board_template:
@@ -437,6 +608,7 @@ def clear_board():
             k += 1
 
     game_status.setText(tr("board_cleared"))
+    update_sum_hints()
 
 
 def update_hint_button():
@@ -510,6 +682,7 @@ def buy_hint():
     cell.style().polish(cell)
 
     current_board_template[row][col] = correct_value
+    update_sum_hints()
 
     coins -= current_hint_price
     hints_used += 1
@@ -618,6 +791,7 @@ game_timer_label = game_widgets["game_timer_label"]
 game_coins_label = game_widgets["game_coins_label"]
 game_magic_label = game_widgets["game_magic_label"]
 game_back_top = game_widgets["game_back_top"]
+grid_card = game_widgets["grid_card"]
 grid = game_widgets["grid"]
 check_button = game_widgets["check_button"]
 clear_button = game_widgets["clear_button"]
@@ -663,6 +837,9 @@ music_volume_slider = settings_widgets["music_volume_slider"]
 sound_volume_label = settings_widgets["sound_volume_label"]
 sound_volume_value = settings_widgets["sound_volume_value"]
 sound_volume_slider = settings_widgets["sound_volume_slider"]
+show_sums_label = settings_widgets["show_sums_label"]
+show_sums_on_button = settings_widgets["show_sums_on_button"]
+show_sums_off_button = settings_widgets["show_sums_off_button"]
 settings_back = settings_widgets["settings_back"]
 
 # -------------------- Stack --------------------
@@ -710,8 +887,6 @@ def update_language_texts():
     )
 
     game_back_top.setText(tr("back_arrow"))
-
-    game_back_top.setText(tr("back_arrow"))
     check_button.setText(tr("check"))
     clear_button.setText(tr("clear"))
     hint_button.setText(tr("hint"))
@@ -736,6 +911,9 @@ def update_language_texts():
     language_label.setText(tr("interface_language"))
     music_volume_label.setText(tr("music_volume"))
     sound_volume_label.setText(tr("sound_volume"))
+    show_sums_label.setText(tr("show_sums"))
+    show_sums_on_button.setText(tr("show_sums_on"))
+    show_sums_off_button.setText(tr("show_sums_off"))
     settings_back.setText(tr("back"))
 
     update_coins_labels()
@@ -756,7 +934,8 @@ click_buttons = [
     size3_button, size4_button, size5_button,
     easy_button, medium_button, hard_button,
     check_button, clear_button, hint_button,
-    light_theme_button, dark_theme_button
+    light_theme_button, dark_theme_button,
+    show_sums_on_button, show_sums_off_button
 ]
 
 for button in click_buttons:
@@ -797,6 +976,9 @@ language_combo.currentIndexChanged.connect(change_language)
 music_volume_slider.valueChanged.connect(change_music_volume)
 sound_volume_slider.valueChanged.connect(change_sound_volume)
 
+show_sums_on_button.clicked.connect(lambda: change_show_sums(True))
+show_sums_off_button.clicked.connect(lambda: change_show_sums(False))
+
 # -------------------- Начальные состояния --------------------
 def start_app():
     select_size(3)
@@ -815,6 +997,7 @@ def start_app():
     music_volume_slider.setValue(music_volume)
     sound_volume_slider.setValue(sound_volume)
     update_volume_labels()
+    update_show_sums_buttons()
 
     update_language_texts()
     apply_theme(current_theme)

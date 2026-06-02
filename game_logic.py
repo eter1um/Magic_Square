@@ -104,6 +104,8 @@ def load_progress(filename):
                 data["music_volume"] = 50
             if "sound_volume" not in data:
                 data["sound_volume"] = 50
+            if "show_sums" not in data:
+                data["show_sums"] = True
 
             return data
             
@@ -117,7 +119,8 @@ def load_progress(filename):
             "theme": "light",
             "language": "ru",
             "music_volume": 50,
-            "sound_volume": 50
+            "sound_volume": 50,
+            "show_sums": True
         }
 
 

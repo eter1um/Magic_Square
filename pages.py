@@ -256,6 +256,7 @@ def create_game_page(title_font):
         "game_coins_label": game_coins_label,
         "game_magic_label": game_magic_label,
         "game_back_top": game_back_top,
+        "grid_card": grid_card,
         "grid": grid,
         "check_button": check_button,
         "clear_button": clear_button,
@@ -288,6 +289,7 @@ def create_rules_page(title_font, subtitle_font):
     rules_text = QLabel()
     rules_text.setWordWrap(True)
     rules_text.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+    rules_text.setFont(subtitle_font)
 
     rules_card_layout.addWidget(rules_text)
 
@@ -400,7 +402,7 @@ def create_settings_page(title_font, subtitle_font, section_font, music_volume, 
 
     settings_card_page = QFrame()
     settings_card_page.setObjectName("card")
-    settings_card_page.setFixedWidth(380)
+    settings_card_page.setFixedSize(380, 500)
 
     settings_card_page_layout = QVBoxLayout()
     settings_card_page.setLayout(settings_card_page_layout)
@@ -473,6 +475,28 @@ def create_settings_page(title_font, subtitle_font, section_font, music_volume, 
     settings_card_page_layout.addSpacing(6)
     settings_card_page_layout.addWidget(sound_volume_value)
     settings_card_page_layout.addWidget(sound_volume_slider)
+    settings_card_page_layout.addSpacing(18)
+
+    show_sums_label = QLabel("Показывать суммы")
+    show_sums_label.setFont(section_font)
+    show_sums_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    show_sums_on_button = QPushButton("Да")
+    show_sums_off_button = QPushButton("Нет")
+
+    show_sums_on_button.setFixedSize(140, 46)
+    show_sums_off_button.setFixedSize(140, 46)
+
+    show_sums_buttons_layout = QHBoxLayout()
+    show_sums_buttons_layout.setSpacing(12)
+    show_sums_buttons_layout.addWidget(show_sums_on_button)
+    show_sums_buttons_layout.addWidget(show_sums_off_button)
+
+    settings_card_page_layout.addWidget(show_sums_label)
+    settings_card_page_layout.addSpacing(10)
+    settings_card_page_layout.addLayout(show_sums_buttons_layout)
+    settings_card_page_layout.addSpacing(15)
+
 
     settings_back = QPushButton("Назад")
     settings_back.setFixedSize(200, 50)
@@ -501,6 +525,9 @@ def create_settings_page(title_font, subtitle_font, section_font, music_volume, 
         "sound_volume_label": sound_volume_label,
         "sound_volume_value": sound_volume_value,
         "sound_volume_slider": sound_volume_slider,
+        "show_sums_label": show_sums_label,
+        "show_sums_on_button": show_sums_on_button,
+        "show_sums_off_button": show_sums_off_button,
         "settings_back": settings_back
     }
 

@@ -3,7 +3,7 @@ window_height = 680
 
 title_font_size = 20
 subtitle_font_size = 12
-section_font_size = 14
+section_font_size = 12
 
 unlock_prices = {
     4: 75,
