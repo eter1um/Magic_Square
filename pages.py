@@ -281,7 +281,7 @@ def create_rules_page(title_font, subtitle_font):
 
     rules_card = QFrame()
     rules_card.setObjectName("card")
-    rules_card.setFixedSize(400, 300)
+    rules_card.setFixedSize(400, 330)
 
     rules_card_layout = QVBoxLayout()
     rules_card.setLayout(rules_card_layout)
